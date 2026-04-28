@@ -1,90 +1,81 @@
-# 🧠 NeuroGuard — AI Attention Economy Protector
+# 🧠 NeuroGuard — The Digital Habit Guardian
+> **Restoring Human Agency in the Age of the Attention Economy.**
 
-Hey there! Welcome to **NeuroGuard**, our submission for the TechFusion 2.0 Hackathon under the **"Web Platforms for Digital Transformation & Social Impact"** track.
-
-We built this because we all felt it — the pull of infinite scrolling, the wasted hours, the guilt of opening Instagram for "just 5 minutes" and coming back 40 minutes later. NeuroGuard is our answer to the modern attention economy.
-
----
-
-## 🌟 What Does It Do?
-
-NeuroGuard is a web-based digital wellness platform that:
-
-- **Monitors your digital behavior** and classifies it in real-time as Healthy, Moderate, or Risk
-- **Detects doom-scrolling** (continuous social media use over 15 minutes on apps like TikTok, Instagram, etc.)
-- **Actively intervenes** — not just with a notification, but with a full-screen "Focus Room" lock that forces a 15-second box breathing exercise before you can continue
-- **Shows you the data** — habit stats, usage breakdowns, live detection logs, and an Addiction Score (0–100)
+NeuroGuard is a comprehensive, OS-integrated digital wellness suite designed to combat "doom-scrolling," mitigate digital addiction, and provide parents with remote oversight over their family's digital health. Built for **TechFusion 2.0**, it leverages real-time behavioral analysis and proactive interventions to break the dopamine loops created by modern social media.
 
 ---
 
-## 🚦 Hackathon Progress
+## 🚀 Key Features
 
-### ✅ Checkpoint 1 — Initial Setup & Idea Validation *(Completed)*
-- Locked in the project concept and pivoted to a Web Platform to fit the hackathon domain
-- Set up the Node.js backend and core frontend architecture
-- Designed the dark-mode glassmorphism UI system
+### 💻 OS-Native Behavioral Tracking
+Unlike browser-only extensions, NeuroGuard uses a **Node.js + PowerShell Bridge** to track the active foreground window across the entire Operating System—detecting a "doom-scroll" whether you're in Chrome, TikTok for Desktop, or Discord.
 
-### ✅ Checkpoint 2 — Core Development Progress *(Completed at 5:00 PM)*
+### 🛡️ Parental Control & Remote Locking
+- **Parent Global Dashboard:** A dedicated portal (`/parent.html`) with real-time status polling.
+- **Remote Hard-Lock:** Parents can instantly trigger a Windows Session Lock (`rundll32.exe`) on the child's device if suspicious activity is detected.
+- **Automated Email Alerts:** Integrated with **Nodemailer**, the system sends detailed HTML usage alerts to parents when "Risk" behavior is detected.
 
-This checkpoint was all about making the platform feel real and functional. Here is what we built and shipped:
+### 🧠 AI-Driven Interventions
+- **The Doom-Scroll Sentinel:** Automatically detects continuous usage (>10m) of high-dopamine apps and fires a "Mindful Reset."
+- **Habit Recovery Room:** Features a **Bubble-Pop Mini-game** (to occupy hands) and **Mind-Refreshing Quotes** (to reset focus) while the countdown timer runs.
+- **AI Habit Coach:** A conversational bot that provides custom behavioral advice based on your live Addiction and Productivity scores.
 
-**🧠 AI Detection Engine (Backend)**
-- Built a rule-based behavior analysis API at `POST /api/analyze-behavior`
-- Detection rules implemented:
-  - **Doom-Scroll Rule:** Any single session > 15 minutes on TikTok, Instagram, Shorts, or Reels → flags as HIGH RISK
-  - **Night-Time Usage Rule:** Activity detected after 11 PM → +15 penalty to Addiction Score
-  - **High Frequency Rule:** 3+ app sessions in a short window → +10 penalty
-  - **Extended Session Rule:** A session exceeding 30 minutes → +10 penalty
-- Added a `/api/status` health check endpoint to confirm the engine is online
-- Responses now include a full `breakdown` object showing every detected penalty
-
-**📊 Live Dashboard (Frontend)**
-- Added **4 real-time Stat Cards**: Screen Time Today, Sessions Detected, Longest Session, and Interventions Triggered
-- Built a **live Detection Engine Log** that shows timestamped AI decisions as they happen
-- Integrated **3 Simulation Modes**: Healthy Use, Moderate Use, and Doom-Scroll (each sends a unique payload with different apps and durations to the backend)
-- Added **Toast Notification System** — soft, animated slide-in popups for non-critical alerts (Moderate state)
-- Hard intervention for Risk state → **Focus Room Overlay** with box breathing exercise and a 15-second timed unlock
-
-**🕐 UI Enhancements**
-- Live clock in the sidebar footer showing current local time
-- NeuroGuard logo rebranded with a brain icon
-- Improved chart animations and card hover effects
+### 📊 Advanced Analytics
+- **Addiction vs. Productivity Tracking:** Distinguishes between "Bad" (Scrolling) and "Good" (IDE/Learning) usage.
+- **Opportunity Cost Engine:** Live-calculates how many pages of a book you could have read or calories you could have burned during your scroll time.
+- **Weekly Trend Insights:** Visualizes long-term behavioral shifts to track improvement.
+- **Dark Pattern Knowledge Base:** Educates users on manipulative UX (Infinite Scroll, Variable Rewards, FOMO alerts).
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | HTML5, CSS3 (Glassmorphism), Vanilla JS |
-| Charts | Chart.js (via CDN) |
-| Backend | Node.js + Express.js |
-| API Style | REST |
-| Design | Dark Mode, CSS Variables, CSS Animations |
+- **Frontend:** HTML5, CSS3 (Glassmorphism), Vanilla JavaScript
+- **Backend:** Node.js, Express.js
+- **OS Integration:** PowerShell, Node `child_process`
+- **Analytics:** Chart.js, LocalStorage Streaks
+- **Communications:** Nodemailer (Ethereal Integration)
+- **PWA:** Service Workers, Manifest v3 for offline/installable support
 
 ---
 
-## ⚙️ Running Locally
+## 🏁 Installation & Setup
 
-```bash
-# Step 1: Enter the backend folder
-cd backend
+### Prerequisites
+- Node.js (v16+)
+- Windows OS (for native window tracking & remote lock features)
 
-# Step 2: Install dependencies
-npm install
+### Quick Start
+1. **Clone the Repo:**
+   ```bash
+   git clone https://github.com/premgouda1916/Team-Ignite_NeuroGuard.git
+   cd Team-Ignite_NeuroGuard
+   ```
 
-# Step 3: Start the server
-node server.js
-```
+2. **Setup Backend:**
+   ```bash
+   cd backend
+   npm install
+   node server.js
+   ```
 
-Then open your browser at **`http://localhost:3000`**
-
-### How to Test
-Once the dashboard loads, use the three buttons in the top-right corner:
-- **"Healthy Use"** → Score stays green, get a success toast notification
-- **"Moderate Use"** → Score turns yellow, triggers a soft warning toast
-- **"Doom-Scroll"** → Score spikes to Risk, triggers the full-screen Focus Room intervention with a breathing exercise
+3. **Access the Application:**
+   - **User Dashboard:** `http://localhost:3000`
+   - **Parental Portal:** `http://localhost:3000/parent.html` (Password: `admin123`)
 
 ---
 
-*Team Ignite | TechFusion 2.0 | April 2026*
+## 🛰️ The "NeuroGuard Elite" Roadmap (Tier 3)
+- **Predictive Burnout Detection:** Analyzing "Context Switching" frequency to warn users of digital fatigue *before* it happens.
+- **IOT Home Sync:** Dimming smart lights in the user's room when late-night scrolling is detected.
+- **Community Wellness Squads:** Privacy-first accountability groups with friends.
+
+---
+
+## 👥 The Team — Ignite
+Built with passion for **TechFusion 2.0** to solve a modern social crisis.
+
+*“Your attention is the only thing you truly own. We help you guard it.”*
+
+---
+© 2026 NeuroGuard AI. Licensed under MIT.
