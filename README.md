@@ -1,54 +1,90 @@
-# 🛡️ NeuroGuard
+# 🧠 NeuroGuard — AI Attention Economy Protector
 
-Hey there! Welcome to the **NeuroGuard** repo. We built this project for the TechFusion 2.0 hackathon under the **Web Platforms for Digital Transformation & Social Impact** track.
+Hey there! Welcome to **NeuroGuard**, our submission for the TechFusion 2.0 Hackathon under the **"Web Platforms for Digital Transformation & Social Impact"** track.
 
-Let's be honest—most of us spend way too much time staring at screens. Between TikTok, Instagram Reels, and endless YouTube Shorts, "doom-scrolling" has become a real problem. We noticed how much it was actively hurting our own productivity, focus, and mental health, so we decided to build something to fight back against the attention economy.
-
-## 🌟 What is this all about?
-**NeuroGuard** isn't just another screen-time app that simply tells you how many hours you wasted today. It's a web-based platform that actively *intervenes*. 
-
-We built a visual dashboard that monitors your digital habits. When our engine detects that you are falling down a doom-scrolling rabbit hole, it triggers a "Focus Room"—a hard-blocking overlay that interrupts your scrolling and forces you to take a breather (literally, we put a box-breathing exercise in there!) before you can unlock your screen again.
+We built this because we all felt it — the pull of infinite scrolling, the wasted hours, the guilt of opening Instagram for "just 5 minutes" and coming back 40 minutes later. NeuroGuard is our answer to the modern attention economy.
 
 ---
 
-## 🚦 Where We're At (Hackathon Progress)
+## 🌟 What Does It Do?
 
-We are currently uploading our progress for the first two checkpoints of the hackathon! 
+NeuroGuard is a web-based digital wellness platform that:
 
-**✅ Checkpoint 1 & 2 Completed!**
-- **The Concept & Pivot:** We locked in our idea and pivoted to a Web Platform architecture to perfectly fit the domain.
-- **The Tech Stack is Live:** We set up a custom Glassmorphic UI using pure HTML/CSS/JS (because we wanted it to look incredibly modern without the bloat of heavy frameworks), and connected it to a Node.js/Express backend.
-- **Core Logic works:** We built the mock "AI Attention Engine" in the backend. It actively parses usage data and successfully triggers the Focus Room overlay when it detects a risk.
+- **Monitors your digital behavior** and classifies it in real-time as Healthy, Moderate, or Risk
+- **Detects doom-scrolling** (continuous social media use over 15 minutes on apps like TikTok, Instagram, etc.)
+- **Actively intervenes** — not just with a notification, but with a full-screen "Focus Room" lock that forces a 15-second box breathing exercise before you can continue
+- **Shows you the data** — habit stats, usage breakdowns, live detection logs, and an Addiction Score (0–100)
 
 ---
 
-## 🛠️ Want to see it in action? (For the Judges)
+## 🚦 Hackathon Progress
 
-We built a neat "Simulation Mode" so you don't have to wait 15 minutes to see the intervention trigger. Here is how you can run it on your local machine:
+### ✅ Checkpoint 1 — Initial Setup & Idea Validation *(Completed)*
+- Locked in the project concept and pivoted to a Web Platform to fit the hackathon domain
+- Set up the Node.js backend and core frontend architecture
+- Designed the dark-mode glassmorphism UI system
 
-**1. Clone the repo and jump into the backend folder:**
+### ✅ Checkpoint 2 — Core Development Progress *(Completed at 5:00 PM)*
+
+This checkpoint was all about making the platform feel real and functional. Here is what we built and shipped:
+
+**🧠 AI Detection Engine (Backend)**
+- Built a rule-based behavior analysis API at `POST /api/analyze-behavior`
+- Detection rules implemented:
+  - **Doom-Scroll Rule:** Any single session > 15 minutes on TikTok, Instagram, Shorts, or Reels → flags as HIGH RISK
+  - **Night-Time Usage Rule:** Activity detected after 11 PM → +15 penalty to Addiction Score
+  - **High Frequency Rule:** 3+ app sessions in a short window → +10 penalty
+  - **Extended Session Rule:** A session exceeding 30 minutes → +10 penalty
+- Added a `/api/status` health check endpoint to confirm the engine is online
+- Responses now include a full `breakdown` object showing every detected penalty
+
+**📊 Live Dashboard (Frontend)**
+- Added **4 real-time Stat Cards**: Screen Time Today, Sessions Detected, Longest Session, and Interventions Triggered
+- Built a **live Detection Engine Log** that shows timestamped AI decisions as they happen
+- Integrated **3 Simulation Modes**: Healthy Use, Moderate Use, and Doom-Scroll (each sends a unique payload with different apps and durations to the backend)
+- Added **Toast Notification System** — soft, animated slide-in popups for non-critical alerts (Moderate state)
+- Hard intervention for Risk state → **Focus Room Overlay** with box breathing exercise and a 15-second timed unlock
+
+**🕐 UI Enhancements**
+- Live clock in the sidebar footer showing current local time
+- NeuroGuard logo rebranded with a brain icon
+- Improved chart animations and card hover effects
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML5, CSS3 (Glassmorphism), Vanilla JS |
+| Charts | Chart.js (via CDN) |
+| Backend | Node.js + Express.js |
+| API Style | REST |
+| Design | Dark Mode, CSS Variables, CSS Animations |
+
+---
+
+## ⚙️ Running Locally
+
 ```bash
+# Step 1: Enter the backend folder
 cd backend
-```
 
-**2. Install the necessary packages:**
-```bash
+# Step 2: Install dependencies
 npm install
-```
 
-**3. Fire up the local server:**
-```bash
+# Step 3: Start the server
 node server.js
 ```
 
-**4. Check out the dashboard!**
-Open your favorite browser and head over to `http://localhost:3000`.
+Then open your browser at **`http://localhost:3000`**
 
-**How to test the simulation:**
-Once the dashboard is loaded, look at the top right corner. 
-- Try clicking the **"Simulate Healthy Use"** button to see how the dashboard charts normally react.
-- Then, click **"Trigger Doom-Scroll"**. This will fire a payload simulating a bad scrolling session to our backend. Watch the Addiction Score spike and experience the fullscreen Focus Room intervention for yourself!
+### How to Test
+Once the dashboard loads, use the three buttons in the top-right corner:
+- **"Healthy Use"** → Score stays green, get a success toast notification
+- **"Moderate Use"** → Score turns yellow, triggers a soft warning toast
+- **"Doom-Scroll"** → Score spikes to Risk, triggers the full-screen Focus Room intervention with a breathing exercise
 
 ---
 
-*Built with late-night coffee and a lot of passion for Team Ignite!*
+*Team Ignite | TechFusion 2.0 | April 2026*

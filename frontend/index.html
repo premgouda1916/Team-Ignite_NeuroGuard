@@ -3,43 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroGuard</title>
-    <!-- Google Fonts for Modern Typography -->
+    <meta name="description" content="NeuroGuard - AI-powered digital habit tracking and doom-scroll intervention platform for mental wellness.">
+    <title>NeuroGuard — Digital Habit Guardian</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="main.css">
-    <!-- Chart.js for usage graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
     <div id="app">
         <!-- Sidebar Navigation -->
         <nav class="sidebar glass-panel">
             <div class="logo">
-                <i class="fa-solid fa-shield-virus"></i> Guardian
+                <i class="fa-solid fa-brain"></i> NeuroGuard
             </div>
             <ul class="nav-links">
-                <li class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
-                <li><i class="fa-solid fa-bullseye"></i> Focus Modes</li>
-                <li><i class="fa-solid fa-gear"></i> Settings</li>
+                <li class="active" id="nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+                <li id="nav-focus"><i class="fa-solid fa-bullseye"></i> Focus Modes</li>
+                <li id="nav-settings"><i class="fa-solid fa-gear"></i> Settings</li>
             </ul>
+            <div class="sidebar-footer">
+                <div class="live-clock" id="live-clock">--:--:--</div>
+                <p class="sidebar-footer-label">Local Time</p>
+            </div>
         </nav>
 
         <!-- Main Content Area -->
         <main class="content">
             <header class="top-nav glass-panel">
-                <h1>Overview</h1>
+                <div class="top-nav-left">
+                    <h1>Overview</h1>
+                    <span class="page-subtitle">Today's Digital Health Report</span>
+                </div>
                 <div class="simulator-controls">
-                    <span class="badge">Simulation Mode</span>
-                    <button id="btn-simulate-healthy" class="btn btn-outline">Simulate Healthy Use</button>
-                    <button id="btn-simulate-doom" class="btn btn-danger"><i class="fa-solid fa-biohazard"></i> Trigger Doom-Scroll</button>
+                    <span class="badge"><i class="fa-solid fa-circle-play"></i> Simulation Mode</span>
+                    <button id="btn-simulate-healthy" class="btn btn-outline"><i class="fa-solid fa-leaf"></i> Healthy Use</button>
+                    <button id="btn-simulate-moderate" class="btn btn-warn"><i class="fa-solid fa-clock"></i> Moderate Use</button>
+                    <button id="btn-simulate-doom" class="btn btn-danger"><i class="fa-solid fa-biohazard"></i> Doom-Scroll</button>
                 </div>
             </header>
+
+            <!-- Stats Summary Row -->
+            <div class="stats-row">
+                <div class="stat-card glass-panel">
+                    <div class="stat-icon" style="background: rgba(0,206,201,0.15); color: var(--success);">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-screen-time">0m</span>
+                        <span class="stat-label">Screen Time Today</span>
+                    </div>
+                </div>
+                <div class="stat-card glass-panel">
+                    <div class="stat-icon" style="background: rgba(108,92,231,0.15); color: var(--primary);">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-sessions">0</span>
+                        <span class="stat-label">Sessions Detected</span>
+                    </div>
+                </div>
+                <div class="stat-card glass-panel">
+                    <div class="stat-icon" style="background: rgba(253,203,110,0.15); color: #fdcb6e;">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-longest">0m</span>
+                        <span class="stat-label">Longest Session</span>
+                    </div>
+                </div>
+                <div class="stat-card glass-panel">
+                    <div class="stat-icon" style="background: rgba(255,118,117,0.15); color: var(--danger);">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-interventions">0</span>
+                        <span class="stat-label">Interventions Today</span>
+                    </div>
+                </div>
+            </div>
 
             <div class="dashboard-grid">
                 <!-- Addiction Score Widget -->
                 <div class="card glass-panel score-card">
-                    <h2>Addiction Score</h2>
+                    <h2><i class="fa-solid fa-brain"></i> Addiction Score</h2>
                     <div class="score-display">
                         <svg class="circular-chart" viewBox="0 0 36 36">
                             <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
@@ -48,13 +98,25 @@
                         <div class="score-value" id="score-text">0</div>
                     </div>
                     <p id="status-text" class="status-badge status-healthy">Healthy</p>
+                    <p class="score-hint" id="score-hint">Run a simulation to see your score</p>
                 </div>
 
                 <!-- Live Usage Chart Widget -->
                 <div class="card glass-panel chart-card">
-                    <h2>Live App Usage</h2>
+                    <div class="chart-header">
+                        <h2><i class="fa-solid fa-chart-bar"></i> App Usage Breakdown</h2>
+                        <span class="chart-subtitle">Minutes per category</span>
+                    </div>
                     <canvas id="usageChart"></canvas>
                 </div>
+            </div>
+
+            <!-- Detection Log -->
+            <div class="card glass-panel log-card">
+                <h2><i class="fa-solid fa-list-check"></i> Detection Engine Log</h2>
+                <ul class="log-list" id="detection-log">
+                    <li class="log-item log-info"><i class="fa-solid fa-info-circle"></i> NeuroGuard is ready. Run a simulation to see real-time detection logs.</li>
+                </ul>
             </div>
         </main>
 
@@ -62,18 +124,21 @@
         <div id="focus-overlay" class="focus-overlay hidden">
             <div class="focus-content glass-panel">
                 <i class="fa-solid fa-triangle-exclamation warning-icon"></i>
-                <h2 id="intervention-title">Intervention Triggered</h2>
-                <p id="intervention-msg">You have been doom-scrolling. It's time to take control.</p>
+                <h2 id="intervention-title">🧠 Doom-Scroll Detected</h2>
+                <p id="intervention-msg">You have been scrolling continuously for over 15 minutes. Take a breath and reset.</p>
                 
                 <div class="exercise-box">
-                    <h3>Suggested: <span id="exercise-name">Box Breathing</span></h3>
+                    <h3>Try this: <span id="exercise-name">Box Breathing (4-4-4-4)</span></h3>
                     <div class="breathing-circle">
-                        <div class="breathe-text">Inhale</div>
+                        <div class="breathe-text" id="breathe-text">Inhale</div>
                     </div>
+                    <p class="breathe-instruction">Breathe in for 4s → Hold 4s → Breathe out 4s → Hold 4s</p>
                 </div>
 
                 <div class="focus-actions">
-                    <button id="btn-dismiss-focus" class="btn btn-primary" disabled>Unlocking in <span id="lock-timer">15</span>s</button>
+                    <button id="btn-dismiss-focus" class="btn btn-primary" disabled>
+                        <i class="fa-solid fa-lock"></i> Unlocking in <span id="lock-timer">15</span>s
+                    </button>
                 </div>
             </div>
         </div>
