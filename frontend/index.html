@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="NeuroGuard - AI-powered digital habit tracking and doom-scroll intervention platform for mental wellness.">
+    <meta name="description"
+        content="NeuroGuard - AI-powered digital habit tracking and doom-scroll intervention platform for mental wellness.">
     <title>NeuroGuard — Digital Habit Guardian</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
@@ -23,6 +31,7 @@
             <ul class="nav-links">
                 <li class="active" id="nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
                 <li id="nav-focus"><i class="fa-solid fa-bullseye"></i> Focus Modes</li>
+                <li id="nav-education"><i class="fa-solid fa-graduation-cap"></i> Dark Patterns</li>
                 <li id="nav-settings"><i class="fa-solid fa-gear"></i> Settings</li>
             </ul>
             <div class="sidebar-footer">
@@ -33,10 +42,19 @@
 
         <!-- Main Content Area -->
         <main class="content">
-            <header class="top-nav glass-panel">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard">
+                <header class="top-nav glass-panel">
                 <div class="top-nav-left">
                     <h1>Overview</h1>
                     <span class="page-subtitle">Today's Digital Health Report</span>
+                </div>
+                <div class="gamification-ribbon">
+                    <div class="streak-box">
+                        <i class="fa-solid fa-fire streak-icon"></i>
+                        <span id="day-streak">0 Day Streak</span>
+                    </div>
                 </div>
                 <div class="simulator-controls">
                     <span class="badge"><i class="fa-solid fa-circle-play"></i> Simulation Mode</span>
@@ -45,6 +63,34 @@
                     <button id="btn-simulate-doom" class="btn btn-danger"><i class="fa-solid fa-biohazard"></i> Doom-Scroll</button>
                 </div>
             </header>
+
+            <!-- Live Tracking Bar -->
+            <div class="live-tracking-bar glass-panel" id="live-tracking-bar">
+                <div class="tracking-status" id="tracking-status">
+                    <span class="tracking-dot idle" id="tracking-dot"></span>
+                    <span id="tracking-label">Live Tracking: OFF</span>
+                </div>
+                <div class="tracking-info">
+                    <div class="tracking-stat">
+                        <i class="fa-solid fa-stopwatch"></i>
+                        <span>Session Timer: </span>
+                        <strong id="live-timer">00:00:00</strong>
+                    </div>
+                    <div class="tracking-stat">
+                        <i class="fa-solid fa-window-restore"></i>
+                        <span>Away Events: </span>
+                        <strong id="away-count">0</strong>
+                    </div>
+                    <div class="tracking-stat away-indicator" id="away-indicator" style="display:none;">
+                        <i class="fa-solid fa-person-running"></i>
+                        <span id="away-label">Away — tracking...</span>
+                    </div>
+                </div>
+                <div class="tracking-actions">
+                    <button id="btn-start-tracking" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Live Tracking</button>
+                    <button id="btn-stop-tracking" class="btn btn-outline" style="display:none;"><i class="fa-solid fa-stop"></i> Stop & Analyze</button>
+                </div>
+            </div>
 
             <!-- Stats Summary Row -->
             <div class="stats-row">
@@ -92,16 +138,28 @@
                     <h2><i class="fa-solid fa-brain"></i> Addiction Score</h2>
                     <div class="score-display">
                         <svg class="circular-chart" viewBox="0 0 36 36">
-                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path id="score-ring" class="circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle-bg"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="score-ring" class="circle" stroke-dasharray="0, 100"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                         </svg>
                         <div class="score-value" id="score-text">0</div>
                     </div>
-                    <p id="status-text" class="status-badge status-healthy">Healthy</p>
+                    <p id="status-text" class="status-badge status-healthy">Healthy Habit</p>
                     <p class="score-hint" id="score-hint">Run a simulation to see your score</p>
+
+                    <!-- Productivity Bar -->
+                    <div class="productivity-section">
+                        <div class="prod-header">
+                            <span>Productivity Level</span>
+                            <strong id="prod-percent">0%</strong>
+                        </div>
+                        <div class="prod-bar-bg">
+                            <div id="prod-bar-fill" class="prod-bar-fill"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Live Usage Chart Widget -->
                 <div class="card glass-panel chart-card">
                     <div class="chart-header">
                         <h2><i class="fa-solid fa-chart-bar"></i> App Usage Breakdown</h2>
@@ -109,15 +167,194 @@
                     </div>
                     <canvas id="usageChart"></canvas>
                 </div>
+
+                <!-- NEW: Opportunity Cost Card -->
+                <div class="card glass-panel cost-card">
+                    <h2><i class="fa-solid fa-hourglass-half"></i> Opportunity Cost</h2>
+                    <div class="cost-content">
+                        <div class="cost-item">
+                            <i class="fa-solid fa-book"></i>
+                            <div>
+                                <strong id="cost-pages">0</strong>
+                                <span>Pages could have been read</span>
+                            </div>
+                        </div>
+                        <div class="cost-item">
+                            <i class="fa-solid fa-person-walking"></i>
+                            <div>
+                                <strong id="cost-calories">0</strong>
+                                <span>Calories could have been burned</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="cost-footer">Calculated from total scroll time today.</p>
+                </div>
+            </div>
+
+            <!-- Top Applications Horizontal Bar Chart -->
+            <div class="card glass-panel top-apps-card">
+                <div class="chart-header">
+                    <h2><i class="fa-solid fa-mobile-screen-button"></i> Top Applications</h2>
+                    <span class="chart-subtitle">Time spent per app (minutes)</span>
+                </div>
+                <canvas id="topAppsChart"></canvas>
+            </div>
+
+            <!-- Weekly Trend Line Chart -->
+            <div class="card glass-panel trend-card">
+                <div class="chart-header">
+                    <h2><i class="fa-solid fa-chart-line"></i> Weekly Usage Trend</h2>
+                    <span class="chart-subtitle">Productive vs Scrolling over 7 days</span>
+                </div>
+                <div style="position: relative; height: 180px;">
+                    <canvas id="weeklyTrendChart"></canvas>
+                </div>
             </div>
 
             <!-- Detection Log -->
             <div class="card glass-panel log-card">
                 <h2><i class="fa-solid fa-list-check"></i> Detection Engine Log</h2>
                 <ul class="log-list" id="detection-log">
-                    <li class="log-item log-info"><i class="fa-solid fa-info-circle"></i> NeuroGuard is ready. Run a simulation to see real-time detection logs.</li>
+                    <li class="log-item log-info"><i class="fa-solid fa-info-circle"></i> NeuroGuard is ready. Run a
+                        simulation to see real-time detection logs.</li>
                 </ul>
             </div>
+            </div> <!-- End Dashboard View -->
+
+            <!-- VIEW: FOCUS MODES (Pomodoro) -->
+            <div id="view-focus" style="display: none;">
+                <header class="top-nav glass-panel">
+                    <div class="top-nav-left">
+                        <h1>Focus Modes</h1>
+                        <span class="page-subtitle">Deep work without distractions</span>
+                    </div>
+                </header>
+                
+                <div class="focus-timer-container glass-panel">
+                    <h2><i class="fa-solid fa-stopwatch"></i> Pomodoro Timer</h2>
+                    <p class="focus-instruction">Stay off your blocked apps to keep this ticking.</p>
+                    
+                    <div class="pomodoro-circle" id="pomodoro-circle">
+                        <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+                        <div class="pomodoro-status" id="pomodoro-status">Ready to Focus</div>
+                    </div>
+                    
+                    <div class="pomodoro-controls">
+                        <button class="btn btn-primary btn-large" id="btn-pomo-start"><i class="fa-solid fa-play"></i> Start Focus</button>
+                        <button class="btn btn-warn btn-large" id="btn-pomo-pause" style="display:none;"><i class="fa-solid fa-pause"></i> Pause</button>
+                        <button class="btn btn-outline btn-large" id="btn-pomo-reset"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    </div>
+                </div>
+            </div> <!-- End Focus View -->
+
+            <!-- VIEW: DARK PATTERNS EDUCATION -->
+            <div id="view-education" style="display: none;">
+                <header class="top-nav glass-panel">
+                    <div class="top-nav-left">
+                        <h1>UX Knowledge Base</h1>
+                        <span class="page-subtitle">Learn how apps manipulate your behavior</span>
+                    </div>
+                </header>
+
+                <div class="education-grid">
+                    <div class="edu-card glass-panel">
+                        <div class="edu-icon"><i class="fa-solid fa-infinity"></i></div>
+                        <h3>Infinite Scroll</h3>
+                        <p>Eliminates natural "stopping cues." Your brain never gets the signal to say "I'm done reading," trapping you in a bottomless feed designed to bypass executive function.</p>
+                        <div class="solution-tag">NeuroGuard Intervention: 15-min hard locks re-introduce digital friction.</div>
+                    </div>
+
+                    <div class="edu-card glass-panel">
+                        <div class="edu-icon"><i class="fa-solid fa-slot-machine"></i></div>
+                        <h3>Variable Reward (Slot Machine UX)</h3>
+                        <p>Pull-to-refresh mimics slot machines. You pull without knowing if the reward will be a viral video or a dull post, creating a dopamine-driven "near-miss" addiction loop.</p>
+                        <div class="solution-tag">NeuroGuard Intervention: Replaces refreshing with mindful Bubble-Pop breaks.</div>
+                    </div>
+
+                    <div class="edu-card glass-panel">
+                        <div class="edu-icon"><i class="fa-solid fa-bell-slash"></i></div>
+                        <h3>Artificial FOMO & Ghost Notifications</h3>
+                        <p>Red notifications evoke urgency. Platforms use "ghost" alerts (fake engagement) or disappearing stories to create a biological pressure to check the app constantly.</p>
+                        <div class="solution-tag">NeuroGuard Intervention: Redirects biological urgency into focused Pomodoro work.</div>
+                    </div>
+
+                    <div class="edu-card glass-panel">
+                        <div class="edu-icon"><i class="fa-solid fa-user-secret"></i></div>
+                        <h3>Nagging & Forced Opt-In</h3>
+                        <p>Disruptive prompts that repeatedly ask for location or contacts until you comply. They capitalize on decision fatigue to wear down your privacy defenses.</p>
+                        <div class="solution-tag">NeuroGuard Intervention: Tracks system-level permission prompts to flag invasive app behavior.</div>
+                    </div>
+
+                    <div class="edu-card glass-panel">
+                        <div class="edu-icon"><i class="fa-solid fa-face-sad-tear"></i></div>
+                        <h3>Emotional Steering (Guilt-Tripping)</h3>
+                        <p>Using manipulative language like "Your friends will miss you" when you try to deactivate a setting or leave the app. It's designed to trigger social shame.</p>
+                        <div class="solution-tag">NeuroGuard Intervention: Parent Alerts provide objective oversight against emotional hooks.</div>
+                    </div>
+
+                    <div class="edu-card glass-panel">
+                        <div class="edu-icon"><i class="fa-solid fa-door-closed"></i></div>
+                        <h3>Roach Motel (Hard-to-Cancel)</h3>
+                        <p>Seamless sign-ups but intentionally complex cancellation flows. They hide the "Exit" button behind multiple menu layers to exploit inertia.</p>
+                        <div class="solution-tag">NeuroGuard Intervention: Hard-Lock bypasses app navigation to force an immediate session exit.</div>
+                    </div>
+                </div>
+            </div> <!-- End Education View -->
+
+            <!-- VIEW: SETTINGS -->
+            <div id="view-settings" style="display: none;">
+                <header class="top-nav glass-panel">
+                    <div class="top-nav-left">
+                        <h1>System Settings</h1>
+                        <span class="page-subtitle">Configure your NeuroGuard experience</span>
+                    </div>
+                </header>
+
+                <div class="settings-container glass-panel">
+                    <div class="settings-group">
+                        <h3><i class="fa-solid fa-envelope"></i> Parental Notifications</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Guardian Email</strong>
+                                <span>Receive alerts when usage thresholds are crossed</span>
+                            </div>
+                            <input type="email" placeholder="parent@home.local" class="glass-input">
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3><i class="fa-solid fa-sliders"></i> Addiction Sensitivity</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>AI Score Sensitivity</strong>
+                                <span>How strict should the doom-scroll detector be?</span>
+                            </div>
+                            <select class="glass-select">
+                                <option>Strict (Block after 10m)</option>
+                                <option selected>Balanced (Block after 20m)</option>
+                                <option>Lenient (Block after 40m)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3><i class="fa-solid fa-shield-halved"></i> App Whitelisting</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Productivity Multiplier</strong>
+                                <span>Boost focus score when using IDEs/Learning tools</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" style="margin-top:20px;"><i class="fa-solid fa-floppy-disk"></i> Save Configurations</button>
+                </div>
+            </div> <!-- End Settings View -->
+
         </main>
 
         <!-- Focus Room Overlay (Intervention Mode) -->
@@ -126,13 +363,15 @@
                 <i class="fa-solid fa-triangle-exclamation warning-icon"></i>
                 <h2 id="intervention-title">🧠 Doom-Scroll Detected</h2>
                 <p id="intervention-msg">You have been scrolling continuously for over 15 minutes. Take a breath and reset.</p>
-                
+
                 <div class="exercise-box">
-                    <h3>Try this: <span id="exercise-name">Box Breathing (4-4-4-4)</span></h3>
-                    <div class="breathing-circle">
-                        <div class="breathe-text" id="breathe-text">Inhale</div>
+                    <h3 id="thought-author">Mind Refreshing Thought</h3>
+                    <p id="thought-quote" style="font-size:1.1rem; font-style:italic; margin-bottom:15px; color: var(--success);">"The mind is everything. What you think you become."</p>
+                    
+                    <h4 style="margin-bottom:10px; color:var(--text-muted); font-size: 0.9rem;">Pop the bubbles to break the dopamine loop:</h4>
+                    <div id="bubble-game" class="bubble-game-container">
+                        <!-- Bubbles injected via JS -->
                     </div>
-                    <p class="breathe-instruction">Breathe in for 4s → Hold 4s → Breathe out 4s → Hold 4s</p>
                 </div>
 
                 <div class="focus-actions">
@@ -143,7 +382,44 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- AI Coach Floating Action -->
+    <div id="ai-coach-fab" class="ai-fab">
+        <i class="fa-solid fa-robot"></i>
+        <span class="fab-label">Habit Coach</span>
+    </div>
+
+    <!-- AI Coach Modal -->
+    <div id="ai-coach-modal" class="ai-coach-modal hidden">
+        <div class="ai-header">
+            <h3><i class="fa-solid fa-brain"></i> NeuroGuard AI Coach</h3>
+            <button id="close-ai-coach"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="ai-body">
+            <div class="ai-message bot">
+                <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="ai-bubble">
+                    Hello! I'm your AI wellness companion. I can analyze your current digital health patterns. Give me a moment...
+                </div>
+            </div>
+            <div id="ai-advice-container">
+                <!-- AI feedback injected here -->
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('NeuroGuard Service Worker registered!', reg.scope))
+                    .catch(err => console.error('Service Worker registration failed: ', err));
+            });
+        }
+    </script>
 </body>
+
 </html>

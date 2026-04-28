@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGuard — Parent Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="parent.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <main class="parent-container">
+        <!-- LOGIN VIEW -->
+        <div id="view-login" class="glass-panel login-box">
+            <div class="brand">
+                <i class="fa-solid fa-shield-halved"></i> NeuroGuard Parent Portal
+            </div>
+            <h2>Welcome Back</h2>
+            <p>Login to monitor your child's digital health.</p>
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="parent-pwd" placeholder="Enter Parent Password (admin123)" />
+            </div>
+            <button id="btn-login" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="glass-panel dashboard-box" style="display: none;">
+            <header class="dash-header">
+                <div class="brand"><i class="fa-solid fa-shield-halved"></i> Parent Portal</div>
+                <button id="btn-logout" class="btn btn-outline"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </header>
+
+            <div class="status-overview">
+                <h3>Child Device Status</h3>
+                <div class="child-status-card">
+                    <div class="status-metric">
+                        <span>Addiction Score</span>
+                        <strong id="live-score">0</strong>
+                    </div>
+                    <div class="status-metric">
+                        <span>Current Classification</span>
+                        <div id="live-state" class="state-badge">Unknown</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h3>Remote Actions</h3>
+                <p>If you notice excessive or dangerous usage, you can instantly lock the child's device remotely.</p>
+                <button id="btn-lock" class="btn btn-danger btn-massive"><i class="fa-solid fa-lock"></i> INSTANT HARD LOCK DEVICE</button>
+            </div>
+            
+            <div class="info-footer">
+                <i class="fa-solid fa-circle-info"></i> Page auto-refreshes every 5 seconds.
+            </div>
+        </div>
+    </main>
+
+    <script src="parent.js"></script>
+</body>
+</html>
