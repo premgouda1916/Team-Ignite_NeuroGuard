@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroGuard</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <!-- Chart.js for usage graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-shield-virus"></i> Guardian
+            </div>
+            <ul class="nav-links">
+                <li class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+                <li><i class="fa-solid fa-bullseye"></i> Focus Modes</li>
+                <li><i class="fa-solid fa-gear"></i> Settings</li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <header class="top-nav glass-panel">
+                <h1>Overview</h1>
+                <div class="simulator-controls">
+                    <span class="badge">Simulation Mode</span>
+                    <button id="btn-simulate-healthy" class="btn btn-outline">Simulate Healthy Use</button>
+                    <button id="btn-simulate-doom" class="btn btn-danger"><i class="fa-solid fa-biohazard"></i> Trigger Doom-Scroll</button>
+                </div>
+            </header>
+
+            <div class="dashboard-grid">
+                <!-- Addiction Score Widget -->
+                <div class="card glass-panel score-card">
+                    <h2>Addiction Score</h2>
+                    <div class="score-display">
+                        <svg class="circular-chart" viewBox="0 0 36 36">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="score-ring" class="circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="score-value" id="score-text">0</div>
+                    </div>
+                    <p id="status-text" class="status-badge status-healthy">Healthy</p>
+                </div>
+
+                <!-- Live Usage Chart Widget -->
+                <div class="card glass-panel chart-card">
+                    <h2>Live App Usage</h2>
+                    <canvas id="usageChart"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <!-- Focus Room Overlay (Intervention Mode) -->
+        <div id="focus-overlay" class="focus-overlay hidden">
+            <div class="focus-content glass-panel">
+                <i class="fa-solid fa-triangle-exclamation warning-icon"></i>
+                <h2 id="intervention-title">Intervention Triggered</h2>
+                <p id="intervention-msg">You have been doom-scrolling. It's time to take control.</p>
+                
+                <div class="exercise-box">
+                    <h3>Suggested: <span id="exercise-name">Box Breathing</span></h3>
+                    <div class="breathing-circle">
+                        <div class="breathe-text">Inhale</div>
+                    </div>
+                </div>
+
+                <div class="focus-actions">
+                    <button id="btn-dismiss-focus" class="btn btn-primary" disabled>Unlocking in <span id="lock-timer">15</span>s</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
