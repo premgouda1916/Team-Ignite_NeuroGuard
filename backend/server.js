@@ -125,6 +125,13 @@ app.post('/api/parent/login', (req, res) => {
     res.status(401).json({ success: false, message: 'Invalid password' });
 });
 
+app.post('/api/child/login', (req, res) => {
+    const { password } = req.body;
+    if (password === 'child123') return res.json({ success: true, token: 'child-token' });
+    res.status(401).json({ success: false, message: 'Invalid password' });
+});
+
+
 app.get('/api/parent/status', (req, res) => {
     res.json({
         score: latestChildScore,

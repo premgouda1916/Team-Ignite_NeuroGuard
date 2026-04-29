@@ -16,11 +16,75 @@
     <link rel="stylesheet" href="main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== CHILD LOGIN ===== */
+        .child-login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #0f111a;
+            z-index: 1500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            visibility: visible;
+            opacity: 1;
+        }
+        .child-login-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            padding: 52px 48px; border-radius: 28px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 18px;
+            width: 100%; max-width: 440px;
+            animation: fadeUp 0.6s ease;
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .brand { font-size: 1.1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .brand i { font-size: 1.3rem; }
+        .login-box h2 { font-size: 2rem; font-weight: 700; color: #ffffff; }
+        .login-box > p { color: var(--text-muted); margin-bottom: 10px; }
+
+        .input-group {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px; padding: 12px 18px; width: 100%;
+            transition: border-color 0.2s;
+        }
+        .input-group:focus-within { border-color: var(--primary); }
+        .input-group i { color: var(--text-muted); }
+        .input-group input { background: transparent; border: none; outline: none; color: white;
+                             font-family: var(--font-main); font-size: 0.95rem; width: 100%; }
+    </style>
 </head>
 
 <body>
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
+
+    <!-- ===== CHILD LOGIN OVERLAY ===== -->
+    <div id="child-login-overlay" class="child-login-overlay">
+        <div class="glass-panel login-box">
+            <div class="brand"><i class="fa-solid fa-shield-halved"></i> NeuroGuard</div>
+            <h2>Welcome Back</h2>
+            <p>Please authenticate to access your Digital Habit Guardian.</p>
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" id="child-pwd" placeholder="Enter Child Password (child123)" />
+            </div>
+            <button id="btn-child-login" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+        </div>
+    </div>
 
     <!-- ===== ONBOARDING MODAL ===== -->
     <div id="onboarding-overlay" class="onboarding-overlay hidden">

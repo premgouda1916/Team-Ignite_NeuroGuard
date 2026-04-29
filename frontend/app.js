@@ -1,5 +1,50 @@
 document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'http://localhost:3000/api/analyze-behavior';
+    
+    // ---------- CHILD AUTHENTICATION ----------
+    const loginOverlay = document.getElementById('child-login-overlay');
+    const btnChildLogin = document.getElementById('btn-child-login');
+    const childPwdInput = document.getElementById('child-pwd');
+
+    if (sessionStorage.getItem('child_authenticated') === 'true') {
+        loginOverlay.classList.add('hidden');
+    }
+
+    async function handleChildLogin() {
+        const pwd = childPwdInput.value;
+        try {
+            const res = await fetch('http://localhost:3000/api/child/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd })
+            });
+            const data = await res.json();
+            if (data.success) {
+                sessionStorage.setItem('child_authenticated', 'true');
+                loginOverlay.classList.add('hidden');
+                if (typeof showToast === 'function') {
+                    showToast('success', 'Login Successful', 'Welcome to NeuroGuard.');
+                }
+                if (typeof addLog === 'function') {
+                    addLog('success', 'Child authenticated successfully.');
+                }
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast('danger', 'Login Failed', 'Incorrect password. Try "child123".');
+                }
+            }
+        } catch (e) {
+            if (typeof showToast === 'function') {
+                showToast('danger', 'Offline', 'Backend server not running.');
+            }
+        }
+    }
+
+    if (btnChildLogin) btnChildLogin.addEventListener('click', handleChildLogin);
+    if (childPwdInput) childPwdInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') handleChildLogin();
+    });
+
     let chartInstance = null;
     let lockCountdown = null;
     let interventionCount = 0;
@@ -129,6 +174,17 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Capitalize first letter
                 appName = appName.charAt(0).toUpperCase() + appName.slice(1);
+            }
+
+            // Override for in-browser doom scrolling
+            if (appName === 'Google Chrome' || appName === 'Microsoft Edge') {
+                const distractingApps = ['Instagram', 'TikTok', 'Discord', 'YouTube', 'Twitter', 'Facebook'];
+                for (const distApp of distractingApps) {
+                    if (data.title.toLowerCase().includes(distApp.toLowerCase())) {
+                        appName = distApp;
+                        break;
+                    }
+                }
             }
 
             handleAppChange(appName, data.title);

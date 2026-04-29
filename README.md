@@ -5,11 +5,18 @@ NeuroGuard is a comprehensive, OS-integrated digital wellness suite designed to 
 
 ---
 
-## 📍 Checkpoint 4 Status: FULLY IMPLEMENTED
+## 📍 Checkpoint 5 Status: FINAL PRODUCTION POLISH
 
-We are proud to announce that **Checkpoint 4** milestones are complete. NeuroGuard is now a fully functional, production-ready Digital Wellness Suite. 
+We are proud to announce that the **Checkpoint 5** milestones are complete. NeuroGuard is fully optimized and finalized for hackathon evaluation.
 
-### New & Enhanced in Checkpoint 4:
+### New & Enhanced in Checkpoint 5:
+- **System Audit & Drawback Identification:** Analyzed system architecture for potential edge cases and limitations.
+- **API Resiliency Fallbacks:** Ensured the AI Habit Coach operates smoothly even without valid API keys using local rule-based heuristics.
+- **Cross-Origin & State Syncing:** Fixed state persistence mismatches between frontend sessions and server tracking.
+
+---
+
+## 📍 Checkpoint 4 Status: IMPLEMENTED
 - **Gamified Onboarding Flow:** Interactive guided tour for first-time users.
 - **Cognitive Load Tracker:** Real-time monitoring of mental fatigue based on context switching.
 - **Deep Work Focus Suite:** Pomodoro implementation with Task Intention and Ambient Audio.
@@ -23,7 +30,8 @@ We are proud to announce that **Checkpoint 4** milestones are complete. NeuroGua
 Unlike browser-only extensions, NeuroGuard uses a **Node.js + PowerShell Bridge** to track the active foreground window across the entire Operating System—detecting a "doom-scroll" whether you're in Chrome, TikTok for Desktop, or Discord.
 
 ### 🛡️ Parental Control & Remote Locking
-- **Parent Global Dashboard:** A dedicated portal (`/parent.html`) with real-time status polling.
+- **Secure Child Authentication:** Dedicated login protection for the dashboard (Default: `child123`).
+- **Parent Global Dashboard:** A dedicated portal (`/parent.html`) with real-time status polling (Default: `admin123`).
 - **Remote Hard-Lock:** Parents can instantly trigger a Windows Session Lock (`rundll32.exe`) on the child's device if suspicious activity is detected.
 - **Automated Email Alerts:** Integrated with **Nodemailer**, the system sends detailed HTML usage alerts to parents when "Risk" behavior is detected.
 
@@ -37,6 +45,21 @@ Unlike browser-only extensions, NeuroGuard uses a **Node.js + PowerShell Bridge*
 - **Opportunity Cost Engine:** Live-calculates pages read or calories burned during your scroll time.
 - **Weekly Trend Insights:** Visualizes long-term behavioral shifts.
 - **UX Knowledge Base:** Educates users on manipulative "Dark Patterns."
+
+---
+
+## ⚠️ Known Drawbacks & Limitations
+
+To ensure full transparency for evaluation, the following engineering trade-offs were made during development:
+
+1. **OS Locking Mechanism:**
+   - The native OS tracking relies on PowerShell (`GetForegroundWindow`) and `rundll32.exe`. This makes the heavy backend tracking features **Windows-only**.
+2. **Backend Polling Load:**
+   - The application relies on frontend intervals polling backend endpoints every 2 seconds. Spawning recursive PowerShell instances introduces slight CPU overhead on lower-end machines.
+3. **Data Volatility:**
+   - Long-term trends are stored in client-side `LocalStorage`. If the user clears their browser cache, historical tracking data will reset unless backend DB integration is fully set up.
+4. **Parent Alert SMTP setup:**
+   - Currently defaults to Ethereal test mail logic for demonstration safety. Production ready SMTP protocols must be provided via `.env`.
 
 ---
 
@@ -73,8 +96,8 @@ Unlike browser-only extensions, NeuroGuard uses a **Node.js + PowerShell Bridge*
    ```
 
 3. **Access the Application:**
-   - **User Dashboard:** `http://localhost:3000`
-   - **Parental Portal:** `http://localhost:3000/parent.html` (Password: `admin123`)
+   - **User Dashboard:** `http://localhost:3000` (Child Password: `child123`)
+   - **Parental Portal:** `http://localhost:3000/parent.html` (Parent Password: `admin123`)
 
 ---
 
@@ -85,3 +108,4 @@ Built with passion for **TechFusion 2.0** to solve a modern social crisis.
 
 ---
 © 2026 NeuroGuard AI. Licensed under MIT.
+
