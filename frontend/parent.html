@@ -7,19 +7,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="parent.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Toast Notifications -->
     <div id="toast-container"></div>
 
     <main class="parent-container">
         <!-- LOGIN VIEW -->
         <div id="view-login" class="glass-panel login-box">
-            <div class="brand">
-                <i class="fa-solid fa-shield-halved"></i> NeuroGuard Parent Portal
-            </div>
+            <div class="brand"><i class="fa-solid fa-shield-halved"></i> NeuroGuard Parent Portal</div>
             <h2>Welcome Back</h2>
-            <p>Login to monitor your child's digital health.</p>
+            <p>Monitor your child's digital health in real-time.</p>
             <div class="input-group">
                 <i class="fa-solid fa-lock"></i>
                 <input type="password" id="parent-pwd" placeholder="Enter Parent Password (admin123)" />
@@ -28,34 +26,128 @@
         </div>
 
         <!-- DASHBOARD VIEW -->
-        <div id="view-dashboard" class="glass-panel dashboard-box" style="display: none;">
-            <header class="dash-header">
+        <div id="view-dashboard" class="dashboard-box" style="display: none;">
+            <aside class="parent-sidebar glass-panel">
                 <div class="brand"><i class="fa-solid fa-shield-halved"></i> Parent Portal</div>
-                <button id="btn-logout" class="btn btn-outline"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
-            </header>
-
-            <div class="status-overview">
-                <h3>Child Device Status</h3>
-                <div class="child-status-card">
-                    <div class="status-metric">
-                        <span>Addiction Score</span>
-                        <strong id="live-score">0</strong>
+                <div class="child-score-widget">
+                    <div class="score-ring-wrap">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path id="p-score-ring" class="circle" stroke-dasharray="0, 100"
+                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <div class="score-center">
+                            <span id="live-score">0</span>
+                            <small>/100</small>
+                        </div>
                     </div>
-                    <div class="status-metric">
-                        <span>Current Classification</span>
-                        <div id="live-state" class="state-badge">Unknown</div>
+                    <div id="live-state" class="state-badge badge-healthy">Healthy</div>
+                    <p class="score-label">Child's Addiction Score</p>
+                </div>
+                <nav class="parent-nav">
+                    <div class="p-nav-item active" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</div>
+                    <div class="p-nav-item" data-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> Usage History</div>
+                    <div class="p-nav-item" data-tab="controls"><i class="fa-solid fa-sliders"></i> Controls</div>
+                </nav>
+                <button id="btn-logout" class="btn btn-outline logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+            </aside>
+
+            <div class="parent-content">
+                <!-- TAB: OVERVIEW -->
+                <div class="p-tab active" id="tab-overview">
+                    <div class="content-header">
+                        <h1>Live Overview</h1>
+                        <span class="refresh-badge"><i class="fa-solid fa-rotate"></i> Auto-refresh every 5s</span>
+                    </div>
+
+                    <div class="overview-stats">
+                        <div class="o-stat glass-panel">
+                            <i class="fa-solid fa-brain" style="color:var(--primary)"></i>
+                            <div><strong id="o-score">0</strong><span>Addiction Score</span></div>
+                        </div>
+                        <div class="o-stat glass-panel">
+                            <i class="fa-solid fa-mobile-screen" style="color:var(--success)"></i>
+                            <div><strong id="o-apps">—</strong><span>Top App Used</span></div>
+                        </div>
+                        <div class="o-stat glass-panel">
+                            <i class="fa-solid fa-gauge-high" style="color:var(--warn)"></i>
+                            <div><strong id="o-status">—</strong><span>Current Status</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Score Trend Chart -->
+                    <div class="p-card glass-panel">
+                        <h3><i class="fa-solid fa-chart-line"></i> Score Trend (Live Session)</h3>
+                        <div style="position:relative; height:180px;">
+                            <canvas id="scoreTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Apps used by child -->
+                    <div class="p-card glass-panel">
+                        <h3><i class="fa-solid fa-list"></i> Recent Apps Detected</h3>
+                        <ul class="app-list" id="app-list">
+                            <li class="app-list-empty">No apps detected yet. Child's device must be tracking.</li>
+                        </ul>
                     </div>
                 </div>
-            </div>
 
-            <div class="controls-section">
-                <h3>Remote Actions</h3>
-                <p>If you notice excessive or dangerous usage, you can instantly lock the child's device remotely.</p>
-                <button id="btn-lock" class="btn btn-danger btn-massive"><i class="fa-solid fa-lock"></i> INSTANT HARD LOCK DEVICE</button>
-            </div>
-            
-            <div class="info-footer">
-                <i class="fa-solid fa-circle-info"></i> Page auto-refreshes every 5 seconds.
+                <!-- TAB: HISTORY -->
+                <div class="p-tab" id="tab-history" style="display:none;">
+                    <div class="content-header">
+                        <h1>Usage History</h1>
+                        <span class="refresh-badge"><i class="fa-solid fa-database"></i> Last 20 sessions</span>
+                    </div>
+                    <div class="p-card glass-panel">
+                        <h3><i class="fa-solid fa-table-list"></i> Session Log</h3>
+                        <table class="history-table" id="history-table">
+                            <thead>
+                                <tr><th>Time</th><th>Top Apps</th><th>Score</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="history-body">
+                                <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No history available yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB: CONTROLS -->
+                <div class="p-tab" id="tab-controls" style="display:none;">
+                    <div class="content-header">
+                        <h1>Remote Controls</h1>
+                        <span class="refresh-badge"><i class="fa-solid fa-wifi"></i> Actions sent in real-time</span>
+                    </div>
+
+                    <!-- Hard Lock -->
+                    <div class="p-card glass-panel danger-card">
+                        <h3><i class="fa-solid fa-lock"></i> Emergency Hard Lock</h3>
+                        <p>Instantly lock the child's Windows session remotely. Use when usage is dangerous or excessive.</p>
+                        <button id="btn-lock" class="btn btn-danger btn-massive">
+                            <i class="fa-solid fa-lock"></i> INSTANT HARD LOCK DEVICE
+                        </button>
+                    </div>
+
+                    <!-- Break Reminder -->
+                    <div class="p-card glass-panel">
+                        <h3><i class="fa-solid fa-bell"></i> Send Break Reminder</h3>
+                        <p>A notification will pop up on the child's screen asking them to take a break.</p>
+                        <div class="reminder-row">
+                            <input type="text" id="reminder-msg" class="glass-input" placeholder="Time to take a break! (5 min)" />
+                            <button id="btn-remind" class="btn btn-warn"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                        </div>
+                    </div>
+
+                    <!-- Daily Limit -->
+                    <div class="p-card glass-panel">
+                        <h3><i class="fa-solid fa-hourglass"></i> Daily Screen Time Limit</h3>
+                        <p>Set the maximum allowed screen time per day. Child will be warned and locked when exceeded.</p>
+                        <div class="reminder-row">
+                            <input type="number" id="daily-limit-input" class="glass-input" placeholder="Minutes (e.g. 60)" min="10" max="480" />
+                            <button id="btn-set-limit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Set Limit</button>
+                        </div>
+                        <p class="current-limit">Current limit: <strong id="current-limit-display">—</strong> minutes/day</p>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

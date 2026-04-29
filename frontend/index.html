@@ -22,6 +22,65 @@
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
+    <!-- ===== ONBOARDING MODAL ===== -->
+    <div id="onboarding-overlay" class="onboarding-overlay hidden">
+        <div class="onboarding-modal glass-panel">
+            <!-- Slide 1 -->
+            <div class="onboard-slide active" id="slide-1">
+                <div class="onboard-icon-wrap" style="background: rgba(108,92,231,0.15);">
+                    <i class="fa-solid fa-brain" style="color:var(--primary);"></i>
+                </div>
+                <h2>Welcome to <span class="brand-grad">NeuroGuard</span></h2>
+                <p>Your AI-powered Digital Habit Guardian. We monitor your screen time at the OS level and intervene before doom-scrolling hijacks your focus.</p>
+                <div class="onboard-feature-pills">
+                    <span><i class="fa-solid fa-shield-halved"></i> OS-Native Tracking</span>
+                    <span><i class="fa-solid fa-brain"></i> AI Scoring</span>
+                    <span><i class="fa-solid fa-users"></i> Parent Portal</span>
+                </div>
+            </div>
+            <!-- Slide 2 -->
+            <div class="onboard-slide" id="slide-2">
+                <div class="onboard-icon-wrap" style="background: rgba(0,206,201,0.15);">
+                    <i class="fa-solid fa-chart-line" style="color:var(--success);"></i>
+                </div>
+                <h2>Real-Time <span style="color:var(--success);">Detection</span></h2>
+                <p>Click <strong>Start Live Tracking</strong> and NeuroGuard reads your active Windows process every 2 seconds. When doom-scroll apps consume 10+ minutes, an intervention fires automatically.</p>
+                <div class="onboard-steps">
+                    <div class="onboard-step"><span>1</span> Start Live Tracking</div>
+                    <div class="onboard-step"><span>2</span> Use your device normally</div>
+                    <div class="onboard-step"><span>3</span> NeuroGuard intervenes</div>
+                </div>
+            </div>
+            <!-- Slide 3 -->
+            <div class="onboard-slide" id="slide-3">
+                <div class="onboard-icon-wrap" style="background: rgba(255,118,117,0.15);">
+                    <i class="fa-solid fa-robot" style="color:var(--danger);"></i>
+                </div>
+                <h2>Meet Your <span style="color:var(--warn);">AI Coach</span></h2>
+                <p>Tap the <strong>Habit Coach</strong> button anytime. Our Gemini-powered AI analyzes your live session data and gives you personalised, science-backed recovery advice.</p>
+                <div class="onboard-tip">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Add your <strong>Gemini API key</strong> in Settings → AI Coach for live AI responses.</span>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="onboard-nav">
+                <div class="onboard-dots">
+                    <span class="dot active" id="dot-1"></span>
+                    <span class="dot" id="dot-2"></span>
+                    <span class="dot" id="dot-3"></span>
+                </div>
+                <div class="onboard-btns">
+                    <button class="btn btn-outline" id="btn-onboard-skip">Skip</button>
+                    <button class="btn btn-primary" id="btn-onboard-next">
+                        Next <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="app">
         <!-- Sidebar Navigation -->
         <nav class="sidebar glass-panel">
@@ -29,14 +88,21 @@
                 <i class="fa-solid fa-brain"></i> NeuroGuard
             </div>
             <ul class="nav-links">
-                <li class="active" id="nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
-                <li id="nav-focus"><i class="fa-solid fa-bullseye"></i> Focus Modes</li>
+                <li class="active" id="nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard<kbd>D</kbd></li>
+                <li id="nav-focus"><i class="fa-solid fa-bullseye"></i> Focus Modes<kbd>F</kbd></li>
                 <li id="nav-education"><i class="fa-solid fa-graduation-cap"></i> Dark Patterns</li>
                 <li id="nav-settings"><i class="fa-solid fa-gear"></i> Settings</li>
             </ul>
+            
+            <!-- PWA Install Button -->
+            <button id="pwa-install-btn" class="btn btn-primary" style="margin: 15px 18px 5px; display: none; justify-content: center; border-radius: 12px; padding: 12px;">
+                <i class="fa-solid fa-download"></i> Install Desktop App
+            </button>
+
             <div class="sidebar-footer">
                 <div class="live-clock" id="live-clock">--:--:--</div>
                 <p class="sidebar-footer-label">Local Time</p>
+                <div class="kbd-hint">Press <kbd>D</kbd> / <kbd>F</kbd> to switch</div>
             </div>
         </nav>
 
@@ -58,8 +124,8 @@
                 </div>
                 <div class="simulator-controls">
                     <span class="badge"><i class="fa-solid fa-circle-play"></i> Simulation Mode</span>
-                    <button id="btn-simulate-healthy" class="btn btn-outline"><i class="fa-solid fa-leaf"></i> Healthy Use</button>
-                    <button id="btn-simulate-moderate" class="btn btn-warn"><i class="fa-solid fa-clock"></i> Moderate Use</button>
+                    <button id="btn-simulate-healthy" class="btn btn-outline"><i class="fa-solid fa-leaf"></i> Healthy</button>
+                    <button id="btn-simulate-moderate" class="btn btn-warn"><i class="fa-solid fa-clock"></i> Moderate</button>
                     <button id="btn-simulate-doom" class="btn btn-danger"><i class="fa-solid fa-biohazard"></i> Doom-Scroll</button>
                 </div>
             </header>
@@ -78,7 +144,7 @@
                     </div>
                     <div class="tracking-stat">
                         <i class="fa-solid fa-window-restore"></i>
-                        <span>Away Events: </span>
+                        <span>App Switches: </span>
                         <strong id="away-count">0</strong>
                     </div>
                     <div class="tracking-stat away-indicator" id="away-indicator" style="display:none;">
@@ -92,7 +158,7 @@
                 </div>
             </div>
 
-            <!-- Stats Summary Row -->
+            <!-- Stats Summary Row (5 cards now, incl. cognitive load) -->
             <div class="stats-row">
                 <div class="stat-card glass-panel">
                     <div class="stat-icon" style="background: rgba(0,206,201,0.15); color: var(--success);">
@@ -128,6 +194,19 @@
                     <div class="stat-info">
                         <span class="stat-value" id="stat-interventions">0</span>
                         <span class="stat-label">Interventions Today</span>
+                    </div>
+                </div>
+                <!-- NEW: Cognitive Load Card -->
+                <div class="stat-card glass-panel" id="cog-load-card">
+                    <div class="stat-icon" style="background: rgba(162,155,254,0.15); color: #a29bfe;">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-cog-load">Low</span>
+                        <span class="stat-label">Cognitive Load</span>
+                        <span class="cog-load-bar-wrap">
+                            <span id="cog-load-bar" class="cog-load-bar"></span>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -168,7 +247,7 @@
                     <canvas id="usageChart"></canvas>
                 </div>
 
-                <!-- NEW: Opportunity Cost Card -->
+                <!-- Opportunity Cost Card -->
                 <div class="card glass-panel cost-card">
                     <h2><i class="fa-solid fa-hourglass-half"></i> Opportunity Cost</h2>
                     <div class="cost-content">
@@ -204,7 +283,7 @@
             <div class="card glass-panel trend-card">
                 <div class="chart-header">
                     <h2><i class="fa-solid fa-chart-line"></i> Weekly Usage Trend</h2>
-                    <span class="chart-subtitle">Productive vs Scrolling over 7 days</span>
+                    <span class="chart-subtitle">Productive vs Scrolling over 7 days (real data)</span>
                 </div>
                 <div style="position: relative; height: 180px;">
                     <canvas id="weeklyTrendChart"></canvas>
@@ -215,8 +294,8 @@
             <div class="card glass-panel log-card">
                 <h2><i class="fa-solid fa-list-check"></i> Detection Engine Log</h2>
                 <ul class="log-list" id="detection-log">
-                    <li class="log-item log-info"><i class="fa-solid fa-info-circle"></i> NeuroGuard is ready. Run a
-                        simulation to see real-time detection logs.</li>
+                    <li class="log-item log-info"><i class="fa-solid fa-info-circle"></i> NeuroGuard v2.0 ready. Run a
+                        simulation or start live tracking.</li>
                 </ul>
             </div>
             </div> <!-- End Dashboard View -->
@@ -229,23 +308,125 @@
                         <span class="page-subtitle">Deep work without distractions</span>
                     </div>
                 </header>
-                
-                <div class="focus-timer-container glass-panel">
-                    <h2><i class="fa-solid fa-stopwatch"></i> Pomodoro Timer</h2>
-                    <p class="focus-instruction">Stay off your blocked apps to keep this ticking.</p>
-                    
-                    <div class="pomodoro-circle" id="pomodoro-circle">
-                        <div class="pomodoro-time" id="pomodoro-time">25:00</div>
-                        <div class="pomodoro-status" id="pomodoro-status">Ready to Focus</div>
+
+                <div class="focus-layout">
+                    <!-- LEFT: Timer Card -->
+                    <div class="focus-timer-container glass-panel">
+
+                        <!-- Session Type Tabs -->
+                        <div class="session-tabs">
+                            <button class="session-tab active" data-mode="focus" data-mins="25">
+                                <i class="fa-solid fa-brain"></i> Focus
+                            </button>
+                            <button class="session-tab" data-mode="short" data-mins="5">
+                                <i class="fa-solid fa-mug-hot"></i> Short Break
+                            </button>
+                            <button class="session-tab" data-mode="long" data-mins="15">
+                                <i class="fa-solid fa-person-walking"></i> Long Break
+                            </button>
+                        </div>
+
+                        <!-- Duration Presets -->
+                        <div class="duration-presets" id="duration-presets">
+                            <span class="preset-label">Duration:</span>
+                            <button class="preset-btn active" data-mins="25">25m</button>
+                            <button class="preset-btn" data-mins="50">50m</button>
+                            <button class="preset-btn" data-mins="90">90m</button>
+                        </div>
+
+                        <!-- SVG Countdown Ring + Time -->
+                        <div class="pomo-ring-wrap">
+                            <svg class="pomo-ring-svg" viewBox="0 0 120 120">
+                                <circle class="pomo-ring-bg" cx="60" cy="60" r="54"/>
+                                <circle class="pomo-ring-progress" id="pomo-ring-progress"
+                                    cx="60" cy="60" r="54"
+                                    stroke-dasharray="339.3 339.3"
+                                    stroke-dashoffset="0"/>
+                            </svg>
+                            <div class="pomo-ring-center">
+                                <div class="pomodoro-time" id="pomodoro-time">25:00</div>
+                                <div class="pomodoro-status" id="pomodoro-status">Ready to Focus</div>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="pomodoro-controls">
+                            <button class="btn btn-primary btn-large" id="btn-pomo-start">
+                                <i class="fa-solid fa-play"></i> Start Focus
+                            </button>
+                            <button class="btn btn-warn btn-large" id="btn-pomo-pause" style="display:none;">
+                                <i class="fa-solid fa-pause"></i> Pause
+                            </button>
+                            <button class="btn btn-outline btn-large" id="btn-pomo-reset">
+                                <i class="fa-solid fa-rotate-right"></i> Reset
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div class="pomodoro-controls">
-                        <button class="btn btn-primary btn-large" id="btn-pomo-start"><i class="fa-solid fa-play"></i> Start Focus</button>
-                        <button class="btn btn-warn btn-large" id="btn-pomo-pause" style="display:none;"><i class="fa-solid fa-pause"></i> Pause</button>
-                        <button class="btn btn-outline btn-large" id="btn-pomo-reset"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+
+                    <!-- RIGHT: Side Panel -->
+                    <div class="focus-side-panel">
+
+                        <!-- Task Intent -->
+                        <div class="focus-side-card glass-panel">
+                            <h3><i class="fa-solid fa-bullseye"></i> Session Intention</h3>
+                            <input type="text" id="focus-task-input" class="focus-task-input"
+                                placeholder="What are you working on? (e.g. 'Chapter 3 revision')" />
+                            <p class="focus-task-hint">Setting a clear goal boosts focus by 42%.</p>
+                        </div>
+
+                        <!-- Pomodoro Counter -->
+                        <div class="focus-side-card glass-panel">
+                            <h3><i class="fa-solid fa-fire"></i> Session Counter</h3>
+                            <div class="pomo-counter-row" id="pomo-counter-row">
+                                <!-- Tomato icons injected by JS -->
+                            </div>
+                            <p class="pomo-count-label">
+                                <span id="pomo-count">0</span> sessions completed today
+                            </p>
+                        </div>
+
+                        <!-- Ambient Sound -->
+                        <div class="focus-side-card glass-panel">
+                            <h3><i class="fa-solid fa-headphones"></i> Ambient Sound</h3>
+                            <div class="ambient-grid">
+                                <button class="ambient-btn" id="amb-rain" data-sound="rain">
+                                    <i class="fa-solid fa-cloud-rain"></i> Rain
+                                </button>
+                                <button class="ambient-btn" id="amb-white" data-sound="white">
+                                    <i class="fa-solid fa-wind"></i> White Noise
+                                </button>
+                                <button class="ambient-btn" id="amb-forest" data-sound="forest">
+                                    <i class="fa-solid fa-tree"></i> Forest
+                                </button>
+                                <button class="ambient-btn" id="amb-off" data-sound="off">
+                                    <i class="fa-solid fa-volume-xmark"></i> Off
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Today's Focus Stats -->
+                        <div class="focus-side-card glass-panel">
+                            <h3><i class="fa-solid fa-chart-simple"></i> Today's Focus</h3>
+                            <div class="focus-stats-row">
+                                <div class="focus-stat-item">
+                                    <strong id="focus-total-time">0m</strong>
+                                    <span>Deep Work</span>
+                                </div>
+                                <div class="focus-stat-item">
+                                    <strong id="focus-sessions-done">0</strong>
+                                    <span>Sessions</span>
+                                </div>
+                                <div class="focus-stat-item">
+                                    <strong id="focus-streak-local">0</strong>
+                                    <span>Day Streak</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div> <!-- End Focus View -->
+
 
             <!-- VIEW: DARK PATTERNS EDUCATION -->
             <div id="view-education" style="display: none;">
@@ -263,35 +444,30 @@
                         <p>Eliminates natural "stopping cues." Your brain never gets the signal to say "I'm done reading," trapping you in a bottomless feed designed to bypass executive function.</p>
                         <div class="solution-tag">NeuroGuard Intervention: 15-min hard locks re-introduce digital friction.</div>
                     </div>
-
                     <div class="edu-card glass-panel">
-                        <div class="edu-icon"><i class="fa-solid fa-slot-machine"></i></div>
+                        <div class="edu-icon"><i class="fa-solid fa-dice"></i></div>
                         <h3>Variable Reward (Slot Machine UX)</h3>
                         <p>Pull-to-refresh mimics slot machines. You pull without knowing if the reward will be a viral video or a dull post, creating a dopamine-driven "near-miss" addiction loop.</p>
                         <div class="solution-tag">NeuroGuard Intervention: Replaces refreshing with mindful Bubble-Pop breaks.</div>
                     </div>
-
                     <div class="edu-card glass-panel">
                         <div class="edu-icon"><i class="fa-solid fa-bell-slash"></i></div>
                         <h3>Artificial FOMO & Ghost Notifications</h3>
                         <p>Red notifications evoke urgency. Platforms use "ghost" alerts (fake engagement) or disappearing stories to create a biological pressure to check the app constantly.</p>
                         <div class="solution-tag">NeuroGuard Intervention: Redirects biological urgency into focused Pomodoro work.</div>
                     </div>
-
                     <div class="edu-card glass-panel">
                         <div class="edu-icon"><i class="fa-solid fa-user-secret"></i></div>
                         <h3>Nagging & Forced Opt-In</h3>
                         <p>Disruptive prompts that repeatedly ask for location or contacts until you comply. They capitalize on decision fatigue to wear down your privacy defenses.</p>
                         <div class="solution-tag">NeuroGuard Intervention: Tracks system-level permission prompts to flag invasive app behavior.</div>
                     </div>
-
                     <div class="edu-card glass-panel">
                         <div class="edu-icon"><i class="fa-solid fa-face-sad-tear"></i></div>
                         <h3>Emotional Steering (Guilt-Tripping)</h3>
-                        <p>Using manipulative language like "Your friends will miss you" when you try to deactivate a setting or leave the app. It's designed to trigger social shame.</p>
+                        <p>Using manipulative language like "Your friends will miss you" when you try to deactivate a setting. It's designed to trigger social shame and prevent exit.</p>
                         <div class="solution-tag">NeuroGuard Intervention: Parent Alerts provide objective oversight against emotional hooks.</div>
                     </div>
-
                     <div class="edu-card glass-panel">
                         <div class="edu-icon"><i class="fa-solid fa-door-closed"></i></div>
                         <h3>Roach Motel (Hard-to-Cancel)</h3>
@@ -311,6 +487,7 @@
                 </header>
 
                 <div class="settings-container glass-panel">
+                    <!-- Group 1: Notifications -->
                     <div class="settings-group">
                         <h3><i class="fa-solid fa-envelope"></i> Parental Notifications</h3>
                         <div class="setting-item">
@@ -318,25 +495,27 @@
                                 <strong>Guardian Email</strong>
                                 <span>Receive alerts when usage thresholds are crossed</span>
                             </div>
-                            <input type="email" placeholder="parent@home.local" class="glass-input">
+                            <input type="email" id="setting-guardian-email" placeholder="parent@home.local" class="glass-input">
                         </div>
                     </div>
 
+                    <!-- Group 2: Sensitivity -->
                     <div class="settings-group">
-                        <h3><i class="fa-solid fa-sliders"></i> Addiction Sensitivity</h3>
+                        <h3><i class="fa-solid fa-sliders"></i> Detection Sensitivity</h3>
                         <div class="setting-item">
                             <div class="setting-info">
                                 <strong>AI Score Sensitivity</strong>
                                 <span>How strict should the doom-scroll detector be?</span>
                             </div>
-                            <select class="glass-select">
-                                <option>Strict (Block after 10m)</option>
-                                <option selected>Balanced (Block after 20m)</option>
-                                <option>Lenient (Block after 40m)</option>
+                            <select id="setting-sensitivity" class="glass-select">
+                                <option value="strict">Strict (Block after 10m)</option>
+                                <option value="balanced" selected>Balanced (Block after 15m)</option>
+                                <option value="lenient">Lenient (Block after 25m)</option>
                             </select>
                         </div>
                     </div>
 
+                    <!-- Group 3: Productivity -->
                     <div class="settings-group">
                         <h3><i class="fa-solid fa-shield-halved"></i> App Whitelisting</h3>
                         <div class="setting-item">
@@ -345,13 +524,51 @@
                                 <span>Boost focus score when using IDEs/Learning tools</span>
                             </div>
                             <label class="switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox" id="setting-prod-multiplier" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Sound Feedback</strong>
+                                <span>Play audio cues for tracking events and interventions</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-sound" checked>
                                 <span class="slider round"></span>
                             </label>
                         </div>
                     </div>
-                    
-                    <button class="btn btn-primary" style="margin-top:20px;"><i class="fa-solid fa-floppy-disk"></i> Save Configurations</button>
+
+                    <!-- Group 4: AI Coach -->
+                    <div class="settings-group">
+                        <h3><i class="fa-solid fa-robot"></i> AI Coach Configuration</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Gemini API Key</strong>
+                                <span>Power the AI Coach with Google Gemini. Get key at aistudio.google.com</span>
+                            </div>
+                            <input type="password" id="setting-gemini-key" placeholder="AIza..." class="glass-input">
+                        </div>
+                    </div>
+
+                    <!-- Group 5: Data -->
+                    <div class="settings-group">
+                        <h3><i class="fa-solid fa-database"></i> Data Management</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <strong>Session History</strong>
+                                <span>Clear all stored usage history from this device</span>
+                            </div>
+                            <button class="btn btn-danger" id="btn-clear-history">
+                                <i class="fa-solid fa-trash"></i> Clear History
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-save-settings" style="margin-top:10px; align-self: flex-start; padding: 12px 28px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save All Settings
+                    </button>
                 </div>
             </div> <!-- End Settings View -->
 
@@ -383,28 +600,35 @@
         </div>
     </div>
 
-    <!-- AI Coach Floating Action -->
+    <!-- AI Coach Floating Action Button -->
     <div id="ai-coach-fab" class="ai-fab">
         <i class="fa-solid fa-robot"></i>
         <span class="fab-label">Habit Coach</span>
     </div>
 
-    <!-- AI Coach Modal -->
+    <!-- AI Coach Modal (Full Chat Interface) -->
     <div id="ai-coach-modal" class="ai-coach-modal hidden">
         <div class="ai-header">
-            <h3><i class="fa-solid fa-brain"></i> NeuroGuard AI Coach</h3>
+            <h3><i class="fa-solid fa-brain"></i> NeuroGuard AI Coach <span class="ai-status-badge" id="ai-status-badge">Gemini</span></h3>
             <button id="close-ai-coach"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="ai-body">
+        <div class="ai-body" id="ai-body">
             <div class="ai-message bot">
                 <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
                 <div class="ai-bubble">
-                    Hello! I'm your AI wellness companion. I can analyze your current digital health patterns. Give me a moment...
+                    Hello! I'm your AI wellness companion powered by Gemini. I can analyze your current digital health patterns and give personalised advice. What would you like to know?
                 </div>
             </div>
             <div id="ai-advice-container">
                 <!-- AI feedback injected here -->
             </div>
+        </div>
+        <!-- Chat Input -->
+        <div class="ai-input-row">
+            <input type="text" id="ai-chat-input" class="ai-input" placeholder="Ask your coach anything..." />
+            <button class="btn btn-primary ai-send-btn" id="ai-send-btn">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 

@@ -4,6 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let lockCountdown = null;
     let interventionCount = 0;
 
+    // ---------- SETTINGS (loaded from localStorage) ----------
+    let guardianEmail    = localStorage.getItem('ng_guardian_email') || '';
+    let sensitivity      = localStorage.getItem('ng_sensitivity')    || 'balanced';
+    let prodMultiplier   = localStorage.getItem('ng_prod_mult') !== 'false';
+    let soundEnabled     = localStorage.getItem('ng_sound')      !== 'false';
+    let geminiKey        = localStorage.getItem('ng_gemini_key') || '';
+
+    // ---------- COGNITIVE LOAD STATE ----------
+    let switchTimestamps = []; // rolling window of switch times
+    const COG_WINDOW_MS  = 5 * 60 * 1000; // 5-min window
+
     // ---------- ELEMENTS ----------
     const uiScoreCircle = document.getElementById('score-ring');
     const uiScoreText = document.getElementById('score-text');
@@ -213,28 +224,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleAppChange(newApp, windowTitle) {
         if (currentApp !== newApp) {
-            // User switched apps
             if (currentApp !== null) {
-                // Record time spent on previous app in whole minutes for final log
                 const spentMs = Date.now() - currentAppStart;
-                const spentMins = spentMs / 60000; // Store exact float value to accurately retain live data
-
-                if (!accumulatedSessions[currentApp]) {
-                    accumulatedSessions[currentApp] = 0;
-                }
+                const spentMins = spentMs / 60000;
+                if (!accumulatedSessions[currentApp]) accumulatedSessions[currentApp] = 0;
                 accumulatedSessions[currentApp] += spentMins;
             }
 
-            // Start tracking new app
             currentApp = newApp;
             currentAppStart = Date.now();
             appSwitchCount++;
             awayCountEl.textContent = appSwitchCount;
-
-            // Update UI Tracker
             awayIndicator.style.display = 'flex';
 
-            // Highlight dangerous apps in UI
+            // --- COGNITIVE LOAD TRACKING ---
+            switchTimestamps.push(Date.now());
+            const cutoff = Date.now() - COG_WINDOW_MS;
+            switchTimestamps = switchTimestamps.filter(t => t > cutoff);
+            updateCognitiveLoad(switchTimestamps.length);
+
             if (['Instagram', 'TikTok', 'Discord', 'YouTube', 'Google Chrome'].includes(currentApp)) {
                 trackingDot.className = 'tracking-dot away';
                 trackingBar.classList.add('away-mode');
@@ -247,11 +255,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 awayLabelEl.textContent = `Active App: ${currentApp}`;
                 awayIndicator.classList.remove('away-indicator');
                 awayIndicator.style.color = 'var(--success)';
-                // Reset animation
                 awayIndicator.querySelector('i').style.animation = 'none';
             }
-
             addLog('info', `OS EVENT: Switched window to [${currentApp}] - "${windowTitle.substring(0, 30)}..."`);
+        }
+    }
+
+    function updateCognitiveLoad(switchCount) {
+        const bar   = document.getElementById('cog-load-bar');
+        const label = document.getElementById('stat-cog-load');
+        if (!bar || !label) return;
+        let pct, text, cls;
+        if (switchCount <= 3)       { pct = switchCount * 10; text = 'Low';      cls = ''; }
+        else if (switchCount <= 8)  { pct = 30 + switchCount * 5; text = 'Medium'; cls = 'medium'; }
+        else                         { pct = Math.min(100, 70 + switchCount * 3); text = 'High'; cls = 'high'; }
+        bar.style.width = pct + '%';
+        bar.className = 'cog-load-bar ' + cls;
+        label.textContent = text;
+        if (switchCount > 10 && text === 'High') {
+            showToast('warn', 'High Cognitive Load', `${switchCount} app switches in 5 min. Your focus is fragmenting.`);
         }
     }
 
@@ -260,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(sessionTimerInt);
         clearInterval(osPolyTimerInt);
 
-        // Record the final app
         if (currentApp) {
             const spentMs = Date.now() - currentAppStart;
             const spentMins = Math.max(1, Math.round(spentMs / 60000));
@@ -268,55 +289,57 @@ document.addEventListener('DOMContentLoaded', () => {
             accumulatedSessions[currentApp] += spentMins;
         }
 
-        // Reset UI to idle
         trackingDot.className = 'tracking-dot idle';
         trackingLabel.textContent = 'Live Tracking: OFF';
         trackingBar.classList.remove('active', 'away-mode');
         awayIndicator.style.display = 'none';
         btnStart.style.display = 'inline-flex';
         btnStop.style.display = 'none';
-
         addLog('info', `OS Tracking stopped. Processing session data...`);
 
-        // Convert accumulated dict to sessions array, formatting exact floats to whole logic
-        const finalSessions = Object.keys(accumulatedSessions).map(appName => {
-            return { appName: appName, duration: Math.max(1, Math.round(accumulatedSessions[appName])) };
-        });
+        const finalSessions = Object.keys(accumulatedSessions).map(appName => ({
+            appName, duration: Math.max(1, Math.round(accumulatedSessions[appName]))
+        }));
 
+        // --- SAVE TO LOCALSTORAGE HISTORY ---
+        const totalTime = finalSessions.reduce((a, s) => a + s.duration, 0);
+        const dateKey = new Date().toDateString();
+        const todayEntry = { date: dateKey, totalTime, sessions: finalSessions, interventions: interventionCount };
+        let history = JSON.parse(localStorage.getItem('ng_history') || '[]');
+        const existingIdx = history.findIndex(e => e.date === dateKey);
+        if (existingIdx >= 0) {
+            history[existingIdx].totalTime += totalTime;
+            history[existingIdx].interventions += interventionCount;
+        } else {
+            history.push(todayEntry);
+        }
+        if (history.length > 30) history = history.slice(-30);
+        localStorage.setItem('ng_history', JSON.stringify(history));
+        updateWeeklyChart();
         analyzeRealSessions(finalSessions);
     }
 
     async function analyzeRealSessions(sessionsArray) {
-        if (sessionsArray.length === 0) {
-            sessionsArray.push({ appName: 'Desktop / Idle', duration: 1 });
-        }
-
+        if (sessionsArray.length === 0) sessionsArray.push({ appName: 'Desktop / Idle', duration: 1 });
         addLog('info', `Sending native OS timeline to AI engine for deep analysis...`);
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessions: sessionsArray })
+                body: JSON.stringify({ sessions: sessionsArray, sensitivity })
             });
             const data = await response.json();
-
-            // Build chart data
-            const totalTime = sessionsArray.reduce((a, s) => a + s.duration, 0);
-            
-            // Quick mock categorization for chart
             let socialMs = 0, workMs = 0;
             sessionsArray.forEach(s => {
                 if (['Discord', 'Instagram', 'TikTok', 'Google Chrome'].includes(s.appName)) socialMs += s.duration;
                 else workMs += s.duration;
             });
-
-            const realChartData = [workMs, 0, socialMs, 0]; 
-            
-            // Map true native OS Apps directly into the Top Apps Chart!
-            const realAppLabels = sessionsArray.map(s => s.appName);
-            const realAppData   = sessionsArray.map(s => s.duration);
-            
-            const scenario = { sessions: sessionsArray, chartData: realChartData, appData: realAppData, appLabels: realAppLabels };
+            const scenario = {
+                sessions: sessionsArray,
+                chartData: [workMs, 0, socialMs, 0],
+                appData:   sessionsArray.map(s => s.duration),
+                appLabels: sessionsArray.map(s => s.appName)
+            };
             updateUI(data, scenario);
         } catch (error) {
             addLog('danger', 'Backend offline. Run: cd backend && node server.js');
@@ -675,29 +698,80 @@ document.addEventListener('DOMContentLoaded', () => {
     navEducation.addEventListener('click', () => switchTab(navEducation, viewEducation));
     navSettings.addEventListener('click', () => switchTab(navSettings, viewSettings));
 
-    // ---------- POMODORO TIMER ----------
-    const pomodoroCircle = document.getElementById('pomodoro-circle');
-    const pomodoroTime = document.getElementById('pomodoro-time');
+    // ---------- POMODORO TIMER — UPGRADED ----------
+    const pomodoroTime   = document.getElementById('pomodoro-time');
     const pomodoroStatus = document.getElementById('pomodoro-status');
-    const btnPomoStart = document.getElementById('btn-pomo-start');
-    const btnPomoPause = document.getElementById('btn-pomo-pause');
-    const btnPomoReset = document.getElementById('btn-pomo-reset');
+    const btnPomoStart   = document.getElementById('btn-pomo-start');
+    const btnPomoPause   = document.getElementById('btn-pomo-pause');
+    const btnPomoReset   = document.getElementById('btn-pomo-reset');
+    const pomoRing       = document.getElementById('pomo-ring-progress');
+    const RING_CIRC      = 339.3; // 2 * π * 54
 
-    let pomoTimer = null;
-    let pomoTimeLeft = 25 * 60; // 25 minutes
-    let isPomoRunning = false;
+    let pomoTimer       = null;
+    let pomoTotalSecs   = 25 * 60;
+    let pomoTimeLeft    = pomoTotalSecs;
+    let isPomoRunning   = false;
+    let currentMode     = 'focus';   // focus | short | long
+    let pomoSessionsDone = parseInt(localStorage.getItem('ng_pomo_count_today') || '0');
+    let pomoFocusTime    = parseInt(localStorage.getItem('ng_pomo_time_today')  || '0');
+    let ambientNode      = null;
+    let ambientCtx       = null;
 
-    function formatPomoTime(seconds) {
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        return `${m}:${s}`;
+    function formatPomoTime(s) {
+        return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    }
+
+    function updateRing(secondsLeft, totalSecs) {
+        const pct    = secondsLeft / totalSecs;
+        const offset = RING_CIRC * (1 - pct);
+        if (pomoRing) pomoRing.style.strokeDashoffset = offset;
+    }
+
+    function updatePomoCounterUI() {
+        const row   = document.getElementById('pomo-counter-row');
+        const label = document.getElementById('pomo-count');
+        const ftEl  = document.getElementById('focus-total-time');
+        const fsEl  = document.getElementById('focus-sessions-done');
+        const streak = localStorage.getItem('ng_streak') || '0';
+        document.getElementById('focus-streak-local').textContent = streak;
+        if (label)  label.textContent = pomoSessionsDone;
+        if (ftEl)   ftEl.textContent  = `${Math.round(pomoFocusTime)}m`;
+        if (fsEl)   fsEl.textContent  = pomoSessionsDone;
+        if (!row) return;
+        row.innerHTML = '';
+        const show = Math.max(pomoSessionsDone, 1);
+        for (let i = 0; i < show; i++) {
+            const t = document.createElement('span');
+            t.className = 'pomo-tomato' + (i < pomoSessionsDone ? ' done' : '');
+            t.textContent = i < pomoSessionsDone ? '🍅' : '⬜';
+            row.appendChild(t);
+        }
+    }
+
+    function setMode(mode, mins) {
+        if (isPomoRunning) return;
+        currentMode    = mode;
+        pomoTotalSecs  = mins * 60;
+        pomoTimeLeft   = pomoTotalSecs;
+        pomodoroTime.textContent   = formatPomoTime(pomoTimeLeft);
+        pomodoroStatus.textContent = mode === 'focus' ? 'Ready to Focus' : mode === 'short' ? 'Short Break' : 'Long Break';
+        updateRing(pomoTimeLeft, pomoTotalSecs);
+        if (pomoRing) {
+            pomoRing.className = 'pomo-ring-progress';
+            if (mode === 'short') pomoRing.classList.add('running-short');
+            if (mode === 'long')  pomoRing.classList.add('running-long');
+        }
+        btnPomoStart.innerHTML = `<i class="fa-solid fa-play"></i> Start ${mode === 'focus' ? 'Focus' : 'Break'}`;
+
+        // Show/hide duration presets (only for focus mode)
+        const presetsEl = document.getElementById('duration-presets');
+        if (presetsEl) presetsEl.style.display = mode === 'focus' ? 'flex' : 'none';
     }
 
     function startPomodoro() {
         if (isPomoRunning) return;
         isPomoRunning = true;
-        pomodoroCircle.classList.add('running');
-        pomodoroStatus.textContent = 'Focusing...';
+        pomodoroStatus.textContent = currentMode === 'focus' ? 'Focusing...' : 'On Break...';
         btnPomoStart.style.display = 'none';
         btnPomoPause.style.display = 'inline-flex';
 
@@ -705,16 +779,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pomoTimeLeft > 0) {
                 pomoTimeLeft--;
                 pomodoroTime.textContent = formatPomoTime(pomoTimeLeft);
+                updateRing(pomoTimeLeft, pomoTotalSecs);
             } else {
                 clearInterval(pomoTimer);
-                pomodoroStatus.textContent = 'Focus Complete! 🎉';
-                pomodoroCircle.classList.remove('running');
+                isPomoRunning = false;
                 btnPomoPause.style.display = 'none';
                 btnPomoStart.style.display = 'inline-flex';
-                btnPomoStart.innerHTML = '<i class="fa-solid fa-play"></i> Start Break';
-                isPomoRunning = false;
-                showToast('success', 'Focus Complete', 'You successfully completed a 25-minute Pomodoro session!');
-                addLog('success', 'Pomodoro session completed! 25 minutes of deep focus logged.');
+
+                if (currentMode === 'focus') {
+                    // Log completed focus session
+                    pomoSessionsDone++;
+                    pomoFocusTime += pomoTotalSecs / 60;
+                    localStorage.setItem('ng_pomo_count_today', pomoSessionsDone);
+                    localStorage.setItem('ng_pomo_time_today',  Math.round(pomoFocusTime));
+                    updatePomoCounterUI();
+                    pomodoroStatus.textContent = '🎉 Focus Complete!';
+                    btnPomoStart.innerHTML = '<i class="fa-solid fa-mug-hot"></i> Start Break';
+                    showToast('success', 'Focus Complete!', `${pomoTotalSecs/60} minutes of deep work logged. Take a well-earned break.`);
+                    addLog('success', `Pomodoro: ${pomoTotalSecs/60}m focus session complete! 🍅`);
+                    playSound('success');
+                    // Auto-suggest break
+                    const task = document.getElementById('focus-task-input')?.value;
+                    if (task) addLog('info', `Session intention was: "${task}"`);
+                } else {
+                    pomodoroStatus.textContent = '✅ Break Over!';
+                    btnPomoStart.innerHTML = '<i class="fa-solid fa-brain"></i> Start Focus';
+                    showToast('info', 'Break Complete', 'Time to get back to work!');
+                    playSound('info');
+                }
             }
         }, 1000);
     }
@@ -723,7 +815,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isPomoRunning) return;
         isPomoRunning = false;
         clearInterval(pomoTimer);
-        pomodoroCircle.classList.remove('running');
         pomodoroStatus.textContent = 'Paused';
         btnPomoPause.style.display = 'none';
         btnPomoStart.style.display = 'inline-flex';
@@ -733,18 +824,81 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetPomodoro() {
         isPomoRunning = false;
         clearInterval(pomoTimer);
-        pomoTimeLeft = 25 * 60;
-        pomodoroTime.textContent = formatPomoTime(pomoTimeLeft);
-        pomodoroCircle.classList.remove('running');
-        pomodoroStatus.textContent = 'Ready to Focus';
+        pomoTimeLeft = pomoTotalSecs;
+        pomodoroTime.textContent   = formatPomoTime(pomoTimeLeft);
+        pomodoroStatus.textContent = currentMode === 'focus' ? 'Ready to Focus' : 'Ready for Break';
+        updateRing(pomoTimeLeft, pomoTotalSecs);
         btnPomoPause.style.display = 'none';
         btnPomoStart.style.display = 'inline-flex';
-        btnPomoStart.innerHTML = '<i class="fa-solid fa-play"></i> Start Focus';
+        btnPomoStart.innerHTML = `<i class="fa-solid fa-play"></i> Start ${currentMode === 'focus' ? 'Focus' : 'Break'}`;
     }
 
     btnPomoStart.addEventListener('click', startPomodoro);
     btnPomoPause.addEventListener('click', pausePomodoro);
     btnPomoReset.addEventListener('click', resetPomodoro);
+
+    // Session type tabs
+    document.querySelectorAll('.session-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.session-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            setMode(tab.dataset.mode, parseInt(tab.dataset.mins));
+        });
+    });
+
+    // Duration presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (isPomoRunning) return;
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            pomoTotalSecs = parseInt(btn.dataset.mins) * 60;
+            pomoTimeLeft  = pomoTotalSecs;
+            pomodoroTime.textContent = formatPomoTime(pomoTimeLeft);
+            updateRing(pomoTimeLeft, pomoTotalSecs);
+        });
+    });
+
+    // Ambient sound (Web Audio API generated tones)
+    function stopAmbient() {
+        if (ambientNode) { try { ambientNode.stop(); } catch(_){} ambientNode = null; }
+    }
+    function playAmbient(type) {
+        stopAmbient();
+        if (type === 'off' || !type) return;
+        try {
+            ambientCtx = ambientCtx || new (window.AudioContext || window.webkitAudioContext)();
+            const bufSize = ambientCtx.sampleRate * 2;
+            const buf = ambientCtx.createBuffer(1, bufSize, ambientCtx.sampleRate);
+            const data = buf.getChannelData(0);
+            if (type === 'white') {
+                for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.06;
+            } else if (type === 'rain') {
+                for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.04 * (Math.sin(i * 0.001) * 0.5 + 0.5);
+            } else if (type === 'forest') {
+                for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.03 * Math.abs(Math.sin(i * 0.0005));
+            }
+            const src = ambientCtx.createBufferSource();
+            src.buffer = buf; src.loop = true;
+            const gain = ambientCtx.createGain(); gain.gain.value = 0.5;
+            src.connect(gain); gain.connect(ambientCtx.destination);
+            src.start(); ambientNode = src;
+        } catch(_) { showToast('warn', 'Audio', 'Click anywhere first to enable sound in this browser.'); }
+    }
+
+    document.querySelectorAll('.ambient-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ambient-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            playAmbient(btn.dataset.sound);
+        });
+    });
+
+    // Init counter display
+    updatePomoCounterUI();
+    updateRing(pomoTimeLeft, pomoTotalSecs);
+
+
 
     // ---------- TIER 2: GAMIFICATION STREAK ----------
     function initGamification() {
@@ -772,7 +926,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---------- TIER 2: WEEKLY TREND CHART ----------
     const ctxTrend = document.getElementById('weeklyTrendChart').getContext('2d');
-    new Chart(ctxTrend, {
+    let weeklyChartInstance = new Chart(ctxTrend, {
         type: 'line',
         data: {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -825,33 +979,265 @@ document.addEventListener('DOMContentLoaded', () => {
         aiCoachModal.classList.add('hidden');
     });
 
-    function generateAiAdvice() {
-        const score = parseInt(uiScoreText.textContent);
-        const status = uiStatusBadge.textContent;
-        const productivity = parseInt(document.getElementById('prod-percent').textContent);
-        
-        aiAdviceContainer.innerHTML = '';
-        
-        const botMsg = document.createElement('div');
-        botMsg.className = 'ai-message bot ai-advice';
-        botMsg.innerHTML = `
-            <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
-            <div class="ai-bubble">
-                ${getAdviceContent(status, score, productivity)}
-            </div>
-        `;
-        aiAdviceContainer.appendChild(botMsg);
+    function buildAiContext() {
+        return {
+            score:       parseInt(uiScoreText.textContent) || 0,
+            status:      uiStatusBadge.textContent,
+            productivity:parseInt(document.getElementById('prod-percent').textContent) || 0,
+            screenTime:  document.getElementById('stat-screen-time').textContent,
+            sessions:    document.getElementById('stat-sessions').textContent,
+            streak:      parseInt(localStorage.getItem('ng_streak')) || 0,
+            topApps:     Object.keys(accumulatedSessions).slice(0, 5)
+        };
     }
 
-    function getAdviceContent(status, score, prod) {
-        if (status === 'Risk') {
-            return `I detect a high dopamine loop. Your focus is fragmented. I strongly recommend the 15-minute <strong>Mindful Reset</strong> before you continue. Your long-term goal for today is still reachable if you stop now.`;
-        } else if (prod < 20 && score > 20) {
-            return `Your productive output is currently at ${prod}%. Try opening <strong>VS Code</strong> or <strong>Notion</strong> for 10 minutes to balance your digital chemicals.`;
-        } else if (status === 'Healthy Habit') {
-            return `Excellent balance! You are currently in a high-performance flow state. Keep this momentum for another 20 minutes before taking a short reward break.`;
+    async function sendAiMessage(userText) {
+        const body = aiBody;
+        // Show user bubble
+        const userBubble = document.createElement('div');
+        userBubble.className = 'ai-message user';
+        userBubble.innerHTML = `<div class="ai-avatar"><i class="fa-solid fa-user"></i></div><div class="ai-bubble">${userText}</div>`;
+        body.appendChild(userBubble);
+
+        // Show typing indicator
+        const typingWrap = document.createElement('div');
+        typingWrap.className = 'ai-message bot';
+        typingWrap.innerHTML = `<div class="ai-avatar"><i class="fa-solid fa-robot"></i></div><div class="ai-typing"><span></span><span></span><span></span></div>`;
+        body.appendChild(typingWrap);
+        body.scrollTop = body.scrollHeight;
+
+        try {
+            const res = await fetch('http://localhost:3000/api/ai-coach', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userText, context: buildAiContext(), geminiKey })
+            });
+            const data = await res.json();
+            typingWrap.remove();
+            const botBubble = document.createElement('div');
+            botBubble.className = 'ai-message bot ai-advice';
+            botBubble.innerHTML = `<div class="ai-avatar"><i class="fa-solid fa-robot"></i></div><div class="ai-bubble">${(data.reply || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>`;
+            body.appendChild(botBubble);
+        } catch(e) {
+            typingWrap.remove();
+            const errBubble = document.createElement('div');
+            errBubble.className = 'ai-message bot';
+            errBubble.innerHTML = `<div class="ai-avatar"><i class="fa-solid fa-robot"></i></div><div class="ai-bubble" style="color:var(--danger)">Backend offline. Start the server first.</div>`;
+            body.appendChild(errBubble);
         }
-        return "You're doing alright. Try to maintain a clear intention for every app you open today.";
+        body.scrollTop = body.scrollHeight;
     }
+
+    function generateAiAdvice() {
+        sendAiMessage('Analyze my current digital health and give me personalised advice.');
+    }
+
+    // Chat input send
+    const aiInput   = document.getElementById('ai-chat-input');
+    const aiSendBtn = document.getElementById('ai-send-btn');
+    const aiBody    = document.getElementById('ai-body');
+
+    function handleAiSend() {
+        const txt = aiInput.value.trim();
+        if (!txt) return;
+        aiInput.value = '';
+        sendAiMessage(txt);
+    }
+    aiSendBtn.addEventListener('click', handleAiSend);
+    aiInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleAiSend(); });
+
+    // =========================================
+    // FEATURE: ONBOARDING
+    // =========================================
+    (function initOnboarding() {
+        if (localStorage.getItem('ng_onboarded')) return;
+        const overlay  = document.getElementById('onboarding-overlay');
+        const slides   = document.querySelectorAll('.onboard-slide');
+        const dots     = document.querySelectorAll('.dot');
+        const btnNext  = document.getElementById('btn-onboard-next');
+        const btnSkip  = document.getElementById('btn-onboard-skip');
+        let currentSlide = 0;
+
+        overlay.classList.remove('hidden');
+
+        function goTo(idx) {
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+            currentSlide = idx;
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+            if (currentSlide === slides.length - 1) {
+                btnNext.innerHTML = '<i class="fa-solid fa-rocket"></i> Get Started';
+            }
+        }
+
+        btnNext.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) { goTo(currentSlide + 1); }
+            else { finishOnboarding(); }
+        });
+        btnSkip.addEventListener('click', finishOnboarding);
+
+        function finishOnboarding() {
+            overlay.classList.add('hidden');
+            localStorage.setItem('ng_onboarded', '1');
+        }
+    })();
+
+    // =========================================
+    // FEATURE: SETTINGS SAVE / LOAD
+    // =========================================
+    (function initSettings() {
+        // Pre-populate inputs
+        const emailEl    = document.getElementById('setting-guardian-email');
+        const sensEl     = document.getElementById('setting-sensitivity');
+        const prodEl     = document.getElementById('setting-prod-multiplier');
+        const soundEl    = document.getElementById('setting-sound');
+        const geminiEl   = document.getElementById('setting-gemini-key');
+        const saveBtn    = document.getElementById('btn-save-settings');
+        const clearBtn   = document.getElementById('btn-clear-history');
+
+        if (emailEl)  emailEl.value   = guardianEmail;
+        if (sensEl)   sensEl.value    = sensitivity;
+        if (prodEl)   prodEl.checked  = prodMultiplier;
+        if (soundEl)  soundEl.checked = soundEnabled;
+        if (geminiEl) geminiEl.value  = geminiKey;
+
+        saveBtn && saveBtn.addEventListener('click', () => {
+            guardianEmail  = emailEl?.value   || '';
+            sensitivity    = sensEl?.value    || 'balanced';
+            prodMultiplier = prodEl?.checked  ?? true;
+            soundEnabled   = soundEl?.checked ?? true;
+            geminiKey      = geminiEl?.value  || '';
+
+            localStorage.setItem('ng_guardian_email', guardianEmail);
+            localStorage.setItem('ng_sensitivity',    sensitivity);
+            localStorage.setItem('ng_prod_mult',      prodMultiplier);
+            localStorage.setItem('ng_sound',          soundEnabled);
+            localStorage.setItem('ng_gemini_key',     geminiKey);
+            showToast('success', 'Settings Saved', 'Your preferences have been updated.');
+        });
+
+        clearBtn && clearBtn.addEventListener('click', () => {
+            localStorage.removeItem('ng_history');
+            updateWeeklyChart();
+            showToast('info', 'History Cleared', 'All session history has been erased.');
+        });
+    })();
+
+    // =========================================
+    // FEATURE: REAL WEEKLY CHART FROM LOCALSTORAGE
+    // =========================================
+    function updateWeeklyChart() {
+        const history = JSON.parse(localStorage.getItem('ng_history') || '[]');
+        const days    = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const labels  = [];
+        const prodData = [];
+        const doomData = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toDateString();
+            labels.push(days[d.getDay()]);
+            const entry = history.find(e => e.date === key);
+            if (entry) {
+                let prod = 0, doom = 0;
+                (entry.sessions || []).forEach(s => {
+                    if (PRODUCTIVE_APPS.includes(s.appName)) prod += s.duration;
+                    else doom += s.duration;
+                });
+                prodData.push(prod);
+                doomData.push(doom);
+            } else {
+                prodData.push(0);
+                doomData.push(0);
+            }
+        }
+
+        if (weeklyChartInstance) {
+            weeklyChartInstance.data.labels             = labels;
+            weeklyChartInstance.data.datasets[0].data   = prodData;
+            weeklyChartInstance.data.datasets[1].data   = doomData;
+            weeklyChartInstance.update();
+        }
+    }
+
+    // =========================================
+    // FEATURE: KEYBOARD SHORTCUTS
+    // =========================================
+    document.addEventListener('keydown', e => {
+        if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+        if (e.key === 'd' || e.key === 'D') {
+            document.getElementById('nav-dashboard').click();
+        } else if (e.key === 'f' || e.key === 'F') {
+            document.getElementById('nav-focus').click();
+        } else if (e.key === 'Escape') {
+            document.getElementById('focus-overlay')?.classList.add('hidden');
+            document.getElementById('ai-coach-modal')?.classList.add('hidden');
+        }
+    });
+
+    // =========================================
+    // FEATURE: PARENT REMINDER POLLING
+    // =========================================
+    setInterval(async () => {
+        try {
+            const res  = await fetch('http://localhost:3000/api/parent/check-reminder');
+            const data = await res.json();
+            if (data.hasReminder) {
+                showToast('warn', '📣 Message from Parent', data.message, 8000);
+                playSound('warn');
+            }
+        } catch (_) { /* backend offline — silent fail */ }
+    }, 10000);
+
+    // =========================================
+    // SOUND SYSTEM
+    // =========================================
+    function playSound(type) {
+        if (!soundEnabled) return;
+        try {
+            const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            const freqs = { success: 880, warn: 440, danger: 220, info: 660 };
+            osc.frequency.value = freqs[type] || 660;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+            osc.start(); osc.stop(ctx.currentTime + 0.4);
+        } catch(_) {}
+    }
+
+    // =========================================
+    // FEATURE: PWA INSTALL BUTTON
+    // =========================================
+    let deferredPrompt;
+    const installBtn = document.getElementById('pwa-install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) installBtn.style.display = 'inline-flex';
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+        });
+    }
+
+    window.addEventListener('appinstalled', (evt) => {
+        showToast('success', 'App Installed', 'NeuroGuard desktop app installed successfully!');
+        if (installBtn) installBtn.style.display = 'none';
+    });
+
+    // Init real weekly data on load
+    updateWeeklyChart();
 
 });
